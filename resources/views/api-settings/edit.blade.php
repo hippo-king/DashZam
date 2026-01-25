@@ -115,7 +115,7 @@
                                     {{ __('No data array found in the last response.') }}
                                 </p>
                             @else
-                                <div class="mt-2 max-h-96 overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-4">
+                                <div class="mt-2 h-[60vh] overflow-auto rounded-lg border border-gray-200 bg-gray-50 p-4">
                                     <div class="space-y-4">
                                         @foreach ($dataItems as $index => $item)
                                             @php
@@ -140,14 +140,14 @@
                                                         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                                             {{ __('Events') }}
                                                         </p>
-                                                        <pre class="mt-2 rounded-md bg-gray-900 p-3 text-xs text-gray-100">{{ json_encode($events, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+                                                        <pre class="mt-2 max-h-64 overflow-auto rounded-md bg-gray-900 p-3 text-xs text-gray-100">{{ json_encode($events, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
                                                     </div>
                                                 @else
                                                     <div class="mt-3">
                                                         <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
                                                             {{ __('Data') }}
                                                         </p>
-                                                        <pre class="mt-2 rounded-md bg-gray-900 p-3 text-xs text-gray-100">{{ json_encode($item, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+                                                        <pre class="mt-2 max-h-64 overflow-auto rounded-md bg-gray-900 p-3 text-xs text-gray-100">{{ json_encode($item, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
                                                     </div>
                                                 @endif
                                             </div>
