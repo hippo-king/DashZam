@@ -21,6 +21,11 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'api_base_url',
+        'api_test_endpoint',
+        'api_token',
+        'api_last_payload',
+        'api_last_fetched_at',
     ];
 
     /**
@@ -43,6 +48,9 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'api_last_payload' => 'array',
+            'api_last_fetched_at' => 'datetime',
+            'api_token' => 'encrypted',
         ];
     }
 }
