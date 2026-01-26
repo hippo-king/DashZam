@@ -77,9 +77,9 @@
                                                                 <div>
                                                                     <h2 class="text-base font-semibold text-gray-900">{{ $event['title'] ?? __('Event') }}</h2>
                                                                     <p class="text-sm text-gray-600">
-                                                                        {{ $event['start']->timezone('America/Los_Angeles')->toDayDateTimeString() }}
+                                                                        {{ $event['start']->toDayDateTimeString() }}
                                                                         —
-                                                                        {{ $event['end']->timezone('America/Los_Angeles')->toDayDateTimeString() }}
+                                                                        {{ $event['end']->toDayDateTimeString() }}
                                                                         <span class="text-xs text-gray-400">{{ __('PT') }}</span>
                                                                     </p>
                                                                 </div>

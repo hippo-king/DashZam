@@ -75,7 +75,11 @@ class PublicEventsController extends Controller
             ];
         })->filter()->filter(function ($event) use ($windowStart, $windowEnd) {
             return $event['end']->greaterThanOrEqualTo($windowStart) && $event['start']->lessThanOrEqualTo($windowEnd);
-        })->sortBy('start')->values();
+        })->sortBy(function ($event) use ($now) {
+            $isLive = $now->betweenIncluded($event['start'], $event['end']);
+
+            return sprintf('%d-%012d', $isLive ? 0 : 1, $event['start']->getTimestamp());
+        })->values();
 
         $rinks = [
             'Rink 1' => [],
