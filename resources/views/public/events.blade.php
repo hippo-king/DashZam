@@ -60,7 +60,7 @@
                         @else
                             <div class="overflow-x-auto" style="display:flex; gap:16px; flex-wrap:nowrap; justify-content:center;">
                                 @foreach ($rinks as $rinkName => $events)
-                                    <div class="rounded-lg border border-gray-200 bg-white" style="min-width:320px; max-width:560px; flex:1 1 0%;">
+                                    <div class="rounded-lg border border-gray-200 bg-white" style="min-width:420px; max-width:900px; flex:1 1 0%;">
                                         <div class="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700">
                                             {{ $rinkName }}
                                         </div>
@@ -72,10 +72,15 @@
                                             @else
                                                 <div class="space-y-4">
                                                     @foreach ($events as $event)
-                                                        <div class="rounded-lg bg-gray-50 p-4 shadow-sm">
+                                                        @php
+                                                            $title = $event['title'] ?? __('Event');
+                                                            $isResurface = str_contains(strtolower($title), 'takedown');
+                                                            $displayTitle = $isResurface ? __('Ice Resurfacing') : $title;
+                                                        @endphp
+                                                        <div class="rounded-lg p-4 shadow-sm {{ $isResurface ? 'bg-gray-100 border border-gray-200' : 'bg-gray-50' }}">
                                                             <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                                                 <div>
-                                                                    <h2 class="text-base font-semibold text-gray-900">{{ $event['title'] ?? __('Event') }}</h2>
+                                                                    <h2 class="text-base font-semibold text-gray-900">{{ $displayTitle }}</h2>
                                                                     <p class="text-sm text-gray-600">
                                                                         {{ $event['start']->toDayDateTimeString() }}
                                                                         —
@@ -83,7 +88,7 @@
                                                                         <span class="text-xs text-gray-400">{{ __('PT') }}</span>
                                                                     </p>
                                                                 </div>
-                                                                <span class="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $isResurface ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-700' }}">
                                                                     {{ $event['status'] ?? __('Upcoming') }}
                                                                 </span>
                                                             </div>
