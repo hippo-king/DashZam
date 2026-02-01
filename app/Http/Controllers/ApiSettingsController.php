@@ -95,6 +95,13 @@ class ApiSettingsController extends Controller
             ]);
         }
 
+        $body = $response->json();
+
+        if (is_array($body)) {
+            $body = $this->filterDuplicateEvents($body);
+            $body = $this->splitRinkAndConferenceEvents($body);
+        }
+
         $payload = [
             'requested_at' => now()->toIso8601String(),
             'url' => $url,
@@ -102,7 +109,7 @@ class ApiSettingsController extends Controller
             'ok' => $response->ok(),
             'headers' => $response->headers(),
             'content_type' => $response->header('Content-Type'),
-            'body' => $response->json() ?? $response->body(),
+            'body' => $body ?? $response->body(),
         ];
 
         $user->api_last_payload = $payload;
@@ -155,5 +162,164 @@ class ApiSettingsController extends Controller
         $user->save();
 
         return null;
+    }
+
+    private function filterDuplicateEvents(array $body): array
+    {
+        if (!isset($body['data']) || !is_array($body['data'])) {
+            return $body;
+        }
+
+        if ($this->dataIsEventList($body['data'])) {
+            $body['data'] = $this->dedupeEvents($body['data']);
+            return $body;
+        }
+
+        foreach ($body['data'] as $dataIndex => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $events = $item['events'] ?? ($item['attributes']['events'] ?? null);
+
+            if (!is_array($events)) {
+                continue;
+            }
+
+            $filtered = $this->dedupeEvents($events);
+
+            if (isset($item['events']) && is_array($item['events'])) {
+                $item['events'] = $filtered;
+            } elseif (isset($item['attributes']) && is_array($item['attributes'])) {
+                $item['attributes']['events'] = $filtered;
+            }
+
+            $body['data'][$dataIndex] = $item;
+        }
+
+        return $body;
+    }
+
+    private function splitRinkAndConferenceEvents(array $body): array
+    {
+        if (!isset($body['data']) || !is_array($body['data'])) {
+            return $body;
+        }
+
+        if ($this->dataIsEventList($body['data'])) {
+            [$rinkEvents, $conferenceEvents] = $this->partitionEvents($body['data']);
+            $body['data'] = $rinkEvents;
+            $body['conference_events'] = $conferenceEvents;
+
+            return $body;
+        }
+
+        foreach ($body['data'] as $dataIndex => $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+
+            $events = $item['events'] ?? ($item['attributes']['events'] ?? null);
+
+            if (!is_array($events)) {
+                continue;
+            }
+
+            [$rinkEvents, $conferenceEvents] = $this->partitionEvents($events);
+
+            if (isset($item['events']) && is_array($item['events'])) {
+                $item['events'] = $rinkEvents;
+            } elseif (isset($item['attributes']) && is_array($item['attributes'])) {
+                $item['attributes']['events'] = $rinkEvents;
+            }
+
+            $body['data'][$dataIndex] = $item;
+
+            if (!empty($conferenceEvents)) {
+                $body['conference_events'] = array_merge(
+                    $body['conference_events'] ?? [],
+                    $conferenceEvents
+                );
+            }
+        }
+
+        return $body;
+    }
+
+    private function dataIsEventList(array $data): bool
+    {
+        if ($data === []) {
+            return false;
+        }
+
+        $first = $data[array_key_first($data)] ?? null;
+
+        return is_array($first)
+            && ($first['type'] ?? null) === 'events'
+            && isset($first['attributes'])
+            && is_array($first['attributes']);
+    }
+
+    private function dedupeEvents(array $events): array
+    {
+        $seen = [];
+        $filtered = [];
+
+        foreach ($events as $event) {
+            if (!is_array($event)) {
+                $filtered[] = $event;
+                continue;
+            }
+
+            $attributes = is_array($event['attributes'] ?? null) ? $event['attributes'] : [];
+            $desc = $attributes['desc'] ?? ($event['desc'] ?? ($event['title'] ?? ($event['name'] ?? '')));
+            $start = $attributes['start'] ?? ($event['start'] ?? ($event['start_at'] ?? ($event['starts_at'] ?? null)));
+            $end = $attributes['end'] ?? ($event['end'] ?? ($event['end_at'] ?? ($event['ends_at'] ?? null)));
+
+            $normalizedDesc = strtolower(trim(preg_replace('/\s+/', ' ', preg_replace('/[^a-z0-9\s]+/i', '', (string) $desc))));
+            $timeKey = (string) $start . '|' . (string) $end;
+
+            if ($normalizedDesc !== '') {
+                $bucket = $seen[$timeKey] ?? [];
+
+                foreach ($bucket as $existingDesc) {
+                    if ($normalizedDesc === $existingDesc
+                        || str_contains($normalizedDesc, $existingDesc)
+                        || str_contains($existingDesc, $normalizedDesc)) {
+                        continue 2;
+                    }
+                }
+
+                $bucket[] = $normalizedDesc;
+                $seen[$timeKey] = $bucket;
+            }
+
+            $filtered[] = $event;
+        }
+
+        return $filtered;
+    }
+
+    private function partitionEvents(array $events): array
+    {
+        $rinkEvents = [];
+        $conferenceEvents = [];
+
+        foreach ($events as $event) {
+            if (!is_array($event)) {
+                continue;
+            }
+
+            $attributes = is_array($event['attributes'] ?? null) ? $event['attributes'] : [];
+            $resourceId = $attributes['resource_id'] ?? ($event['resource_id'] ?? null);
+
+            if (in_array($resourceId, [1, 6], true)) {
+                $rinkEvents[] = $event;
+            } elseif ($resourceId === 3 || $resourceId === '3') {
+                $conferenceEvents[] = $event;
+            }
+        }
+
+        return [$rinkEvents, $conferenceEvents];
     }
 }
