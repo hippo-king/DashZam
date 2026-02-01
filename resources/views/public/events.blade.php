@@ -39,13 +39,17 @@
                 <div class="p-6">
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
-                            <h1 class="text-2xl font-semibold text-gray-900">{{ __('24-Hour Events') }}</h1>
-                            <p class="text-sm text-gray-600">
-                                {{ $windowStart->timezone('America/Los_Angeles')->toDayDateTimeString() }}
-                                —
-                                {{ $windowEnd->timezone('America/Los_Angeles')->toDayDateTimeString() }}
-                                <span class="text-xs text-gray-400">{{ __('PT') }}</span>
-                            </p>
+                            <div class="flex flex-col gap-1">
+                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                    {{ __('Current Time') }}
+                                </p>
+                                <p id="current-clock" class="text-2xl font-semibold text-gray-900">
+                                    {{ now()->timezone('America/Los_Angeles')->format('l, M j · g:i:s A') }}
+                                </p>
+                                <p class="text-xs text-gray-500">
+                                    {{ __('PT') }}
+                                </p>
+                            </div>
                         </div>
                         <span class="text-xs text-gray-500">
                             {{ __('Live view shows ongoing and upcoming events.') }}
@@ -58,16 +62,46 @@
                                 {{ __('No events are available yet. This list will show ongoing and upcoming events within the next 24 hours.') }}
                             </div>
                         @else
-                            <div class="overflow-x-auto" style="display:flex; gap:16px; flex-wrap:nowrap; justify-content:center;">
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:hidden">
                                 @foreach ($rinks as $rinkName => $events)
-                                    <div class="rounded-lg border border-gray-200 bg-white" style="min-width:420px; max-width:900px; flex:1 1 0%;">
-                                        <div class="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700">
+                                    @php
+                                        $liveEvent = $liveEvents[$rinkName] ?? null;
+                                    @endphp
+                                    @if ($liveEvent)
+                                        <div class="rounded-lg border border-gray-200 bg-emerald-50 px-4 py-3">
+                                            <div class="flex flex-col items-center gap-2 text-center">
+                                                <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                                    <span class="live-pulse" aria-hidden="true"></span>
+                                                    {{ $rinkName }} · {{ __('Live Now') }}
+                                                </span>
+                                                <h2 class="text-base font-semibold text-gray-900">
+                                                    {{ $liveEvent['title'] ?? __('Live Event') }}
+                                                    @if (!empty($liveEvent['is_mock']))
+                                                        <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
+                                                    @endif
+                                                </h2>
+                                                <p class="text-sm text-gray-600">
+                                                    {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                    —
+                                                    {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endforeach
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                @foreach ($rinks as $rinkName => $events)
+                                    <div class="rounded-lg border border-gray-200 bg-white w-full">
+                                        <div class="border-b border-gray-200 px-4 py-3 text-center text-sm font-semibold text-gray-700">
                                             {{ $rinkName }}
                                         </div>
                                         @php
                                             $liveEvent = $liveEvents[$rinkName] ?? null;
                                         @endphp
                                         @if ($liveEvent)
+                                            <div class="hidden sm:block">
                                             <div class="border-b border-gray-200 bg-emerald-50 px-4 py-3">
                                                 <div class="flex flex-col items-center gap-2 text-center">
                                                     <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
@@ -84,9 +118,9 @@
                                                         {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
                                                         —
                                                         {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
-                                                        <span class="text-xs text-gray-400">{{ __('PT') }}</span>
                                                     </p>
                                                 </div>
+                                            </div>
                                             </div>
                                         @endif
                                         <div class="h-[65vh] overflow-auto p-4">
@@ -115,15 +149,20 @@
                                                             $isResurface = str_contains(strtolower($title), 'takedown');
                                                             $displayTitle = $isResurface ? __('Ice Resurfacing') : $title;
                                                         @endphp
-                                                        <div class="rounded-lg p-4 shadow-sm {{ $isResurface ? 'bg-gray-100 border border-gray-200' : 'bg-gray-50' }}">
+                                                        <div class="rounded-lg p-4 shadow-sm {{ $isResurface ? 'bg-amber-50/80 border border-amber-200 ring-1 ring-amber-200/70' : 'bg-gray-50' }}">
                                                             <div class="flex items-center justify-between gap-3">
                                                                 <div class="min-w-0 flex-1">
-                                                                    <h2 class="text-base font-semibold text-gray-900">{{ $displayTitle }}</h2>
-                                                                    <p class="text-sm text-gray-600">
-                                                                        {{ $event['start']->toDayDateTimeString() }}
+                                                                    <h2 class="text-base font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
+                                                                        {{ $displayTitle }}
+                                                                    </h2>
+                                                                    <p class="text-sm {{ $isResurface ? 'text-amber-800' : 'text-gray-600' }}">
+                                                                        <span class="font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
+                                                                            {{ $event['start']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                                        </span>
                                                                         —
-                                                                        {{ $event['end']->toDayDateTimeString() }}
-                                                                        <span class="text-xs text-gray-400">{{ __('PT') }}</span>
+                                                                        <span class="font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
+                                                                            {{ $event['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                                        </span>
                                                                     </p>
                                                                 </div>
                                                                 <div class="flex flex-none items-center gap-2">
@@ -136,9 +175,11 @@
                                                                             @endforeach
                                                                         </div>
                                                                     @endif
-                                                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $isResurface ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-700' }}">
-                                                                        {{ $event['status'] ?? __('Upcoming') }}
-                                                                    </span>
+                                                                    @if ($isResurface)
+                                                                        <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
+                                                                            {{ __('Resurface') }}
+                                                                        </span>
+                                                                    @endif
                                                                 </div>
                                                             </div>
                                                         </div>
@@ -159,4 +200,30 @@
             </div>
         </div>
     </div>
+    <script>
+        (function () {
+            const clock = document.getElementById('current-clock');
+            if (!clock) {
+                return;
+            }
+
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                weekday: 'long',
+                month: 'short',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true,
+                timeZone: 'America/Los_Angeles',
+            });
+
+            const updateClock = () => {
+                clock.textContent = formatter.format(new Date());
+            };
+
+            updateClock();
+            setInterval(updateClock, 1000);
+        })();
+    </script>
 </x-guest-layout>

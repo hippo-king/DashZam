@@ -106,6 +106,29 @@
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
 }
 
+.theme-dark * {
+    scrollbar-color: #334155 #0f172a;
+}
+
+.theme-dark ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.theme-dark ::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+.theme-dark ::-webkit-scrollbar-thumb {
+    background-color: #334155;
+    border-radius: 9999px;
+    border: 2px solid #0f172a;
+}
+
+.theme-dark ::-webkit-scrollbar-thumb:hover {
+    background-color: #475569;
+}
+
 .live-pulse {
     position: relative;
     display: inline-flex;
