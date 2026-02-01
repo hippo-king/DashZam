@@ -55,6 +55,33 @@
                         </div>
 
                         <div>
+                            <x-input-label for="api_client_id" :value="__('Client ID')" />
+                            <x-text-input
+                                id="api_client_id"
+                                name="api_client_id"
+                                type="text"
+                                class="mt-1 block w-full"
+                                :value="old('api_client_id', $user->api_client_id)"
+                                autocomplete="off"
+                                placeholder="Leave blank to keep current client ID"
+                            />
+                            <x-input-error class="mt-2" :messages="$errors->get('api_client_id')" />
+                        </div>
+
+                        <div>
+                            <x-input-label for="api_client_secret" :value="__('Client Secret')" />
+                            <x-text-input
+                                id="api_client_secret"
+                                name="api_client_secret"
+                                type="password"
+                                class="mt-1 block w-full"
+                                autocomplete="off"
+                                placeholder="Leave blank to keep current client secret"
+                            />
+                            <x-input-error class="mt-2" :messages="$errors->get('api_client_secret')" />
+                        </div>
+
+                        <div>
                             <x-input-label for="api_token" :value="__('API Token')" />
                             <x-text-input
                                 id="api_token"

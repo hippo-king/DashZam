@@ -74,12 +74,33 @@
                                                     @foreach ($events as $event)
                                                         @php
                                                             $title = $event['title'] ?? __('Event');
+                                                            $lockerRooms = null;
+                                                            $lockerRoomList = [];
+
+                                                            if (preg_match_all('/\(([^)]+)\)/', $title, $matches)) {
+                                                                $lockerRooms = collect($matches[1])
+                                                                    ->map(fn ($room) => trim($room))
+                                                                    ->filter()
+                                                                    ->implode(', ');
+                                                                $lockerRoomList = collect($matches[1])
+                                                                    ->flatMap(function ($room) {
+                                                                        return preg_split('/\s*[\/,]\s*|\s+/', trim($room)) ?: [];
+                                                                    })
+                                                                    ->map(fn ($room) => trim($room))
+                                                                    ->filter()
+                                                                    ->unique()
+                                                                    ->values()
+                                                                    ->all();
+                                                                $title = trim(preg_replace('/\s*\([^)]*\)\s*/', ' ', $title));
+                                                                $title = preg_replace('/\s{2,}/', ' ', $title);
+                                                            }
+
                                                             $isResurface = str_contains(strtolower($title), 'takedown');
                                                             $displayTitle = $isResurface ? __('Ice Resurfacing') : $title;
                                                         @endphp
                                                         <div class="rounded-lg p-4 shadow-sm {{ $isResurface ? 'bg-gray-100 border border-gray-200' : 'bg-gray-50' }}">
-                                                            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                                                                <div>
+                                                            <div class="flex items-center justify-between gap-3">
+                                                                <div class="min-w-0 flex-1">
                                                                     <h2 class="text-base font-semibold text-gray-900">{{ $displayTitle }}</h2>
                                                                     <p class="text-sm text-gray-600">
                                                                         {{ $event['start']->toDayDateTimeString() }}
@@ -88,9 +109,20 @@
                                                                         <span class="text-xs text-gray-400">{{ __('PT') }}</span>
                                                                     </p>
                                                                 </div>
-                                                                <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $isResurface ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-700' }}">
-                                                                    {{ $event['status'] ?? __('Upcoming') }}
-                                                                </span>
+                                                                <div class="flex flex-none items-center gap-2">
+                                                                    @if (!$isResurface && count($lockerRoomList))
+                                                                        <div class="flex items-center gap-2 ">
+                                                                            @foreach ($lockerRoomList as $room)
+                                                                                <span class="inline-flex p-4 items-center justify-center rounded-md border border-gray-300 bg-white text-sm font-semibold text-gray-800">
+                                                                                    {{ $room }}
+                                                                                </span>
+                                                                            @endforeach
+                                                                        </div>
+                                                                    @endif
+                                                                    <span class="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold {{ $isResurface ? 'bg-slate-200 text-slate-700' : 'bg-emerald-100 text-emerald-700' }}">
+                                                                        {{ $event['status'] ?? __('Upcoming') }}
+                                                                    </span>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     @endforeach

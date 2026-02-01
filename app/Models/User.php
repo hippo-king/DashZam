@@ -23,6 +23,8 @@ class User extends Authenticatable
         'password',
         'api_base_url',
         'api_test_endpoint',
+        'api_client_id',
+        'api_client_secret',
         'api_token',
         'api_last_payload',
         'api_last_fetched_at',
@@ -51,6 +53,8 @@ class User extends Authenticatable
             'api_last_payload' => 'array',
             'api_last_fetched_at' => 'datetime',
             'api_token' => 'encrypted',
+            'api_client_secret' => 'encrypted',
+            'api_token_expires_at' => 'datetime',
         ];
     }
 }

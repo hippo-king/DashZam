@@ -20,6 +20,8 @@ class ApiSettingsController extends Controller
         $validated = $request->validate([
             'api_base_url' => ['nullable', 'url', 'max:255'],
             'api_test_endpoint' => ['nullable', 'string', 'max:255'],
+            'api_client_id' => ['nullable', 'string', 'max:255'],
+            'api_client_secret' => ['nullable', 'string', 'max:5000'],
             'api_token' => ['nullable', 'string', 'max:5000'],
             'clear_token' => ['nullable', 'boolean'],
         ]);
@@ -28,6 +30,14 @@ class ApiSettingsController extends Controller
 
         $user->api_base_url = $validated['api_base_url'] ?? null;
         $user->api_test_endpoint = $validated['api_test_endpoint'] ?? null;
+
+        if ($request->filled('api_client_id')) {
+            $user->api_client_id = $validated['api_client_id'];
+        }
+
+        if ($request->filled('api_client_secret')) {
+            $user->api_client_secret = $validated['api_client_secret'];
+        }
 
         if ($request->boolean('clear_token')) {
             $user->api_token = null;
@@ -47,6 +57,14 @@ class ApiSettingsController extends Controller
         if (!$user->api_base_url) {
             return back()->withErrors([
                 'api_base_url' => 'Please set the API base URL before fetching data.',
+            ]);
+        }
+
+        $tokenError = $this->ensureApiToken($user);
+
+        if ($tokenError) {
+            return back()->withErrors([
+                'api_token' => $tokenError,
             ]);
         }
 
@@ -83,5 +101,50 @@ class ApiSettingsController extends Controller
         $user->save();
 
         return back()->with('status', 'API response fetched.');
+    }
+
+    private function ensureApiToken($user): ?string
+    {
+        if (!$user->api_client_id || !$user->api_client_secret) {
+            return 'Please set the API client ID and secret to authenticate.';
+        }
+
+        if ($user->api_token && $user->api_token_expires_at && $user->api_token_expires_at->isFuture()) {
+            return null;
+        }
+
+        $authUrl = rtrim($user->api_base_url, '/') . '/auth/token';
+        $payload = [
+            'client_id' => $user->api_client_id,
+            'client_secret' => $user->api_client_secret,
+            'grant_type' => 'client_credentials',
+        ];
+
+        try {
+            /** @var Response $response */
+            $response = Http::timeout(15)
+                ->acceptJson()
+                ->asForm()
+                ->post($authUrl, $payload);
+        } catch (\Throwable $exception) {
+            return 'Failed to authenticate with the API: ' . $exception->getMessage();
+        }
+
+        if (!$response->ok()) {
+            $message = $response->json('message') ?? $response->body();
+            return 'Authentication failed: ' . $message;
+        }
+
+        $token = $response->json('access_token');
+
+        if (!$token) {
+            return 'Authentication failed: access_token missing from response.';
+        }
+
+        $user->api_token = $token;
+        $user->api_token_expires_at = now()->addDay();
+        $user->save();
+
+        return null;
     }
 }
