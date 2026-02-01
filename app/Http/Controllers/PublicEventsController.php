@@ -92,10 +92,34 @@ class PublicEventsController extends Controller
             $rinks[$rinkKey][] = $event;
         }
 
+        $liveEvents = [];
+        foreach ($rinks as $rinkName => $rinkEvents) {
+            $liveEvent = collect($rinkEvents)->first(function ($event) use ($now) {
+                return $now->betweenIncluded($event['start'], $event['end']);
+            });
+
+            if (!$liveEvent) {
+                $mockStart = $now->copy()->subMinutes(20);
+                $mockEnd = $now->copy()->addMinutes(40);
+                $liveEvent = [
+                    'id' => 'mock-' . strtolower(str_replace(' ', '-', $rinkName)),
+                    'resource_id' => $rinkName === 'Rink 2' ? 6 : 1,
+                    'title' => $rinkName === 'Rink 2' ? 'Public Skating (Mock)' : 'Open Hockey (Mock)',
+                    'start' => $mockStart,
+                    'end' => $mockEnd,
+                    'status' => 'Live',
+                    'is_mock' => true,
+                ];
+            }
+
+            $liveEvents[$rinkName] = $liveEvent;
+        }
+
         return view('public.events', [
             'windowStart' => $windowStart,
             'windowEnd' => $windowEnd,
             'rinks' => $rinks,
+            'liveEvents' => $liveEvents,
             'hasData' => $latest !== null,
         ]);
     }

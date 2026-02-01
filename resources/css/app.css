@@ -1,3 +1,46 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.live-pulse {
+    position: relative;
+    display: inline-flex;
+    height: 0.625rem;
+    width: 0.625rem;
+    align-items: center;
+    justify-content: center;
+}
+
+.live-pulse::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: #ef4444;
+    opacity: 0.75;
+    animation: live-pulse 1.25s ease-out infinite;
+}
+
+.live-pulse::after {
+    content: "";
+    position: relative;
+    height: 0.625rem;
+    width: 0.625rem;
+    border-radius: 9999px;
+    background: #dc2626;
+}
+
+@keyframes live-pulse {
+    0% {
+        transform: scale(1);
+        opacity: 0.75;
+    }
+    70% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(2.2);
+        opacity: 0;
+    }
+}

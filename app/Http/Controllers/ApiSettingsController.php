@@ -283,9 +283,11 @@ class ApiSettingsController extends Controller
                 $bucket = $seen[$timeKey] ?? [];
 
                 foreach ($bucket as $existingDesc) {
-                    if ($normalizedDesc === $existingDesc
+                    if (
+                        $normalizedDesc === $existingDesc
                         || str_contains($normalizedDesc, $existingDesc)
-                        || str_contains($existingDesc, $normalizedDesc)) {
+                        || str_contains($existingDesc, $normalizedDesc)
+                    ) {
                         continue 2;
                     }
                 }

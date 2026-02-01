@@ -64,6 +64,36 @@
                                         <div class="border-b border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700">
                                             {{ $rinkName }}
                                         </div>
+                                        @php
+                                            $liveEvent = $liveEvents[$rinkName] ?? null;
+                                        @endphp
+                                        @if ($liveEvent)
+                                            <div class="border-b border-gray-200 bg-emerald-50 px-4 py-3">
+                                                <div class="flex items-center justify-between gap-3">
+                                                    <div class="min-w-0 flex-1">
+                                                        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">
+                                                            {{ __('Live Now') }}
+                                                        </p>
+                                                        <h2 class="text-base font-semibold text-gray-900">
+                                                            {{ $liveEvent['title'] ?? __('Live Event') }}
+                                                            @if (!empty($liveEvent['is_mock']))
+                                                                <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
+                                                            @endif
+                                                        </h2>
+                                                        <p class="text-sm text-gray-600">
+                                                            {{ $liveEvent['start']->toDayDateTimeString() }}
+                                                            —
+                                                            {{ $liveEvent['end']->toDayDateTimeString() }}
+                                                            <span class="text-xs text-gray-400">{{ __('PT') }}</span>
+                                                        </p>
+                                                    </div>
+                                                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                                        <span class="live-pulse" aria-hidden="true"></span>
+                                                        {{ __('Live') }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        @endif
                                         <div class="h-[65vh] overflow-auto p-4">
                                             @if (empty($events))
                                                 <p class="text-sm text-gray-600">
@@ -82,15 +112,7 @@
                                                                     ->map(fn ($room) => trim($room))
                                                                     ->filter()
                                                                     ->implode(', ');
-                                                                $lockerRoomList = collect($matches[1])
-                                                                    ->flatMap(function ($room) {
-                                                                        return preg_split('/\s*[\/,]\s*|\s+/', trim($room)) ?: [];
-                                                                    })
-                                                                    ->map(fn ($room) => trim($room))
-                                                                    ->filter()
-                                                                    ->unique()
-                                                                    ->values()
-                                                                    ->all();
+                                                                $lockerRoomList = \App\Support\LockerRoomParser::extractFromTitle($title);
                                                                 $title = trim(preg_replace('/\s*\([^)]*\)\s*/', ' ', $title));
                                                                 $title = preg_replace('/\s{2,}/', ' ', $title);
                                                             }
