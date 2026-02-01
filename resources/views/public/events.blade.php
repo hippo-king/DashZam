@@ -69,28 +69,23 @@
                                         @endphp
                                         @if ($liveEvent)
                                             <div class="border-b border-gray-200 bg-emerald-50 px-4 py-3">
-                                                <div class="flex items-center justify-between gap-3">
-                                                    <div class="min-w-0 flex-1">
-                                                        <p class="text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                                                            {{ __('Live Now') }}
-                                                        </p>
-                                                        <h2 class="text-base font-semibold text-gray-900">
-                                                            {{ $liveEvent['title'] ?? __('Live Event') }}
-                                                            @if (!empty($liveEvent['is_mock']))
-                                                                <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
-                                                            @endif
-                                                        </h2>
-                                                        <p class="text-sm text-gray-600">
-                                                            {{ $liveEvent['start']->toDayDateTimeString() }}
-                                                            —
-                                                            {{ $liveEvent['end']->toDayDateTimeString() }}
-                                                            <span class="text-xs text-gray-400">{{ __('PT') }}</span>
-                                                        </p>
-                                                    </div>
+                                                <div class="flex flex-col items-center gap-2 text-center">
                                                     <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
                                                         <span class="live-pulse" aria-hidden="true"></span>
-                                                        {{ __('Live') }}
+                                                        {{ __('Live Now') }}
                                                     </span>
+                                                    <h2 class="text-base font-semibold text-gray-900">
+                                                        {{ $liveEvent['title'] ?? __('Live Event') }}
+                                                        @if (!empty($liveEvent['is_mock']))
+                                                            <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
+                                                        @endif
+                                                    </h2>
+                                                    <p class="text-sm text-gray-600">
+                                                        {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                        —
+                                                        {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                        <span class="text-xs text-gray-400">{{ __('PT') }}</span>
+                                                    </p>
                                                 </div>
                                             </div>
                                         @endif

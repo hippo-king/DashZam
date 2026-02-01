@@ -2,6 +2,110 @@
 @tailwind components;
 @tailwind utilities;
 
+.theme-dark {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+.theme-dark .bg-white {
+    background-color: #0b1220 !important;
+}
+
+.theme-dark .bg-white\/90 {
+    background-color: rgba(15, 23, 42, 0.9) !important;
+}
+
+.theme-dark .bg-gray-50 {
+    background-color: #0f172a !important;
+}
+
+.theme-dark .bg-gray-100 {
+    background-color: #111827 !important;
+}
+
+.theme-dark .bg-gray-200 {
+    background-color: #1f2937 !important;
+}
+
+.theme-dark .bg-emerald-50 {
+    background-color: #0b2b2b !important;
+}
+
+.theme-dark .bg-emerald-100 {
+    background-color: #0f3d3d !important;
+}
+
+.theme-dark .bg-slate-200 {
+    background-color: #1f2937 !important;
+}
+
+.theme-dark .text-gray-900 {
+    color: #f1f5f9 !important;
+}
+
+.theme-dark .text-gray-800 {
+    color: #e2e8f0 !important;
+}
+
+.theme-dark .text-gray-700 {
+    color: #cbd5f5 !important;
+}
+
+.theme-dark .text-gray-600 {
+    color: #94a3b8 !important;
+}
+
+.theme-dark .text-gray-500 {
+    color: #94a3b8 !important;
+}
+
+.theme-dark .text-gray-400 {
+    color: #64748b !important;
+}
+
+.theme-dark .text-emerald-700 {
+    color: #6ee7b7 !important;
+}
+
+.theme-dark .border-gray-100 {
+    border-color: #1f2937 !important;
+}
+
+.theme-dark .border-gray-200 {
+    border-color: #1f2937 !important;
+}
+
+.theme-dark .border-gray-300 {
+    border-color: #334155 !important;
+}
+
+.theme-dark .shadow,
+.theme-dark .shadow-sm,
+.theme-dark .shadow-md,
+.theme-dark .shadow-lg {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35) !important;
+}
+
+.theme-dark input,
+.theme-dark textarea,
+.theme-dark select {
+    background-color: #0f172a !important;
+    color: #e2e8f0 !important;
+    border-color: #334155 !important;
+}
+
+.theme-dark input::placeholder,
+.theme-dark textarea::placeholder {
+    color: #64748b !important;
+}
+
+.theme-dark input:focus,
+.theme-dark textarea:focus,
+.theme-dark select:focus {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2) !important;
+}
+
 .live-pulse {
     position: relative;
     display: inline-flex;
