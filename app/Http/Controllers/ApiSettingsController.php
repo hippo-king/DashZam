@@ -68,8 +68,17 @@ class ApiSettingsController extends Controller
             ]);
         }
 
-        $endpoint = $user->api_test_endpoint ?: '/';
-        $url = rtrim($user->api_base_url, '/') . '/' . ltrim($endpoint, '/');
+        $baseUrl = rtrim($user->api_base_url, '/');
+        $start = now()->startOfDay()->format('Y-m-d\TH:i:s');
+        $end = now()->endOfDay()->format('Y-m-d\TH:i:s');
+        $query = 'filter[start__gt]=' . $start . '&filter[end__lt]=' . $end;
+        $url = $baseUrl;
+
+        if ($user->api_test_endpoint) {
+            $url .= '/' . ltrim($user->api_test_endpoint, '/');
+        }
+
+        $url .= '?' . $query;
 
         $client = Http::timeout(15)->accept('application/vnd.api+json');
 
