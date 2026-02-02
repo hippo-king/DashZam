@@ -72,6 +72,7 @@ class PublicEventsController extends Controller
                 'start' => $start,
                 'end' => $end,
                 'status' => $status,
+                'is_close_rink' => false,
             ];
         })->filter()->filter(function ($event) use ($windowStart, $windowEnd) {
             return $event['end']->greaterThanOrEqualTo($windowStart) && $event['start']->lessThanOrEqualTo($windowEnd);
@@ -90,6 +91,23 @@ class PublicEventsController extends Controller
             $resourceId = (int) ($event['resource_id'] ?? 1);
             $rinkKey = $resourceId === 6 ? 'Rink 2' : 'Rink 1';
             $rinks[$rinkKey][] = $event;
+        }
+
+        foreach ($rinks as $rinkName => $rinkEvents) {
+            $lastTakedownIndex = null;
+
+            foreach ($rinkEvents as $index => $event) {
+                if (str_contains(strtolower($event['title'] ?? ''), 'takedown')) {
+                    if (!$lastTakedownIndex || $event['start']->greaterThan($rinkEvents[$lastTakedownIndex]['start'])) {
+                        $lastTakedownIndex = $index;
+                    }
+                }
+            }
+
+            if ($lastTakedownIndex !== null) {
+                $rinkEvents[$lastTakedownIndex]['is_close_rink'] = true;
+                $rinks[$rinkName] = $rinkEvents;
+            }
         }
 
         $liveEvents = [];

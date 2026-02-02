@@ -81,9 +81,15 @@
                                             $barClass = 'bg-emerald-500';
                                             $barPulse = false;
                                             $liveTitle = $liveEvent['title'] ?? __('Live Event');
+                                            $isLiveResurface = str_contains(strtolower($liveTitle), 'takedown');
+                                            $isCloseRink = !empty($liveEvent['is_close_rink']);
                                             $liveLockerRooms = [];
 
-                                            if (preg_match_all('/\(([^)]+)\)/', $liveTitle, $matches)) {
+                                            if ($isCloseRink) {
+                                                $liveTitle = __('Close Rink');
+                                            } elseif ($isLiveResurface) {
+                                                $liveTitle = __('Ice Resurfacing');
+                                            } elseif (preg_match_all('/\(([^)]+)\)/', $liveTitle, $matches)) {
                                                 $liveLockerRooms = \App\Support\LockerRoomParser::extractFromTitle($liveTitle);
                                                 $liveTitle = trim(preg_replace('/\s*\([^)]*\)\s*/', ' ', $liveTitle));
                                                 $liveTitle = preg_replace('/\s{2,}/', ' ', $liveTitle);
@@ -97,8 +103,8 @@
                                                 $elapsed = min($duration, max(0, $nowTime->getTimestamp() - $start->getTimestamp()));
                                                 $progress = (int) round(min(100, max(0, ($elapsed / $duration) * 100)));
                                                 if ($progress >= 90) {
-                                                    $barClass = 'bg-red-500 animate-pulse';
-                                                    $barPulse = true;
+                                                    $barClass = 'bg-red-500';
+                                                    $barPulse = false;
                                                 } elseif ($progress >= 75) {
                                                     $barClass = 'bg-orange-500';
                                                 } elseif ($progress >= 51) {
@@ -123,10 +129,12 @@
                                                 <div class="flex w-full items-center justify-between gap-3 text-base text-gray-200">
                                                     <span>
                                                         {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
-                                                        —
-                                                        {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                        @unless ($isCloseRink)
+                                                            —
+                                                            {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                        @endunless
                                                     </span>
-                                                    @if (count($liveLockerRooms))
+                                                    @if (!$isCloseRink && count($liveLockerRooms))
                                                         <div class="flex items-center gap-2">
                                                             <span class="text-sm font-semibold uppercase tracking-wide text-gray-400">
                                                                 {{ __('Lockers') }}
@@ -156,7 +164,7 @@
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 @foreach ($rinks as $rinkName => $events)
                                     <div class="rounded-lg border border-gray-200 bg-white w-full">
-                                        <div class="border-b border-gray-200 px-4 py-3 text-center text-base font-semibold text-gray-200">
+                                            <div class="rounded-t-lg border-b px-4 py-3 text-center text-base font-semibold {{ $rinkName === 'Rink 1' ? '  border-red-300 bg-red-900 text-red-100' : 'border-blue-300 bg-blue-900 text-blue-100' }}">
                                             {{ $rinkName }}
                                         </div>
                                         @php
@@ -171,9 +179,15 @@
                                                 $barClass = 'bg-emerald-500';
                                                 $barPulse = false;
                                                 $liveTitle = $liveEvent['title'] ?? __('Live Event');
+                                                $isLiveResurface = str_contains(strtolower($liveTitle), 'takedown');
+                                                $isCloseRink = !empty($liveEvent['is_close_rink']);
                                                 $liveLockerRooms = [];
 
-                                                if (preg_match_all('/\(([^)]+)\)/', $liveTitle, $matches)) {
+                                                if ($isCloseRink) {
+                                                    $liveTitle = __('Close Rink');
+                                                } elseif ($isLiveResurface) {
+                                                    $liveTitle = __('Ice Resurfacing');
+                                                } elseif (preg_match_all('/\(([^)]+)\)/', $liveTitle, $matches)) {
                                                     $liveLockerRooms = \App\Support\LockerRoomParser::extractFromTitle($liveTitle);
                                                     $liveTitle = trim(preg_replace('/\s*\([^)]*\)\s*/', ' ', $liveTitle));
                                                     $liveTitle = preg_replace('/\s{2,}/', ' ', $liveTitle);
@@ -187,8 +201,8 @@
                                                     $elapsed = min($duration, max(0, $nowTime->getTimestamp() - $start->getTimestamp()));
                                                     $progress = (int) round(min(100, max(0, ($elapsed / $duration) * 100)));
                                                     if ($progress >= 90) {
-                                                        $barClass = 'bg-red-500 animate-pulse';
-                                                        $barPulse = true;
+                                                        $barClass = 'bg-red-500';
+                                                        $barPulse = false;
                                                     } elseif ($progress >= 75) {
                                                         $barClass = 'bg-orange-500';
                                                     } elseif ($progress >= 51) {
@@ -213,10 +227,12 @@
                                                     <div class="flex w-full items-center justify-between gap-3">
                                                         <span class=" liveTime">
                                                             {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
-                                                            —
-                                                            {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                            @unless ($isCloseRink)
+                                                                —
+                                                                {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                            @endunless
                                                         </span>
-                                                        @if (count($liveLockerRooms))
+                                                        @if (!$isCloseRink && count($liveLockerRooms))
                                                             <div class="flex items-center gap-2">
                                                                 <span class="text-sm font-semibold uppercase tracking-wide text-gray-400">
                                                                     {{ __('Lockers') }}
@@ -265,9 +281,16 @@
                                                             }
 
                                                             $isResurface = str_contains(strtolower($title), 'takedown');
-                                                            $displayTitle = $isResurface ? __('Ice Resurfacing') : $title;
+                                                            $isCloseRink = !empty($event['is_close_rink']);
+                                                            if ($isCloseRink) {
+                                                                $displayTitle = __('Close Rink');
+                                                            } elseif ($isResurface) {
+                                                                $displayTitle = __('Ice Resurfacing');
+                                                            } else {
+                                                                $displayTitle = $title;
+                                                            }
                                                         @endphp
-                                                        <div class="rounded-lg p-4 shadow-sm {{ $isResurface ? 'bg-amber-50/80 border border-amber-200 ring-1 ring-amber-200/70' : 'bg-gray-50' }}">
+                                                        <div class="rounded-lg p-4 shadow-sm {{ $isCloseRink ? 'bg-amber-100/80 border border-amber-300 ring-2 ring-amber-300/70' : ($isResurface ? 'bg-amber-50/80 border border-amber-200 ring-1 ring-amber-200/70' : 'bg-gray-50') }}">
                                                             <div class="flex items-center justify-between gap-3">
                                                                 <div class="min-w-0 flex-1">
                                                                     <h2 class="text-base font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
@@ -277,14 +300,16 @@
                                                                         <span class="font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
                                                                             {{ $event['start']->timezone('America/Los_Angeles')->format('g:i A') }}
                                                                         </span>
-                                                                        —
-                                                                        <span class="font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
-                                                                            {{ $event['end']->timezone('America/Los_Angeles')->format('g:i A') }}
-                                                                        </span>
+                                                                        @unless ($isCloseRink)
+                                                                            —
+                                                                            <span class="font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
+                                                                                {{ $event['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                                            </span>
+                                                                        @endunless
                                                                     </p>
                                                                 </div>
                                                                 <div class="flex flex-none items-center gap-2">
-                                                                    @if (!$isResurface && count($lockerRoomList))
+                                                                    @if (!$isResurface && !$isCloseRink && count($lockerRoomList))
                                                                         <div class="flex items-center gap-2 ">
                                                                             @foreach ($lockerRoomList as $room)
                                                                                 <span class="inline-flex p-4 items-center justify-center rounded-md border border-gray-300 bg-white text-sm font-semibold text-gray-800">
@@ -293,7 +318,12 @@
                                                                             @endforeach
                                                                         </div>
                                                                     @endif
-                                                                    @if ($isResurface)
+                                                                    @if ($isCloseRink)
+                                                                        <span class="inline-flex items-center gap-2 rounded-full bg-amber-200 px-3 py-1 text-xs font-semibold text-amber-900">
+                                                                            <span aria-hidden="true">🔒</span>
+                                                                            {{ __('Close Rink') }}
+                                                                        </span>
+                                                                    @elseif ($isResurface)
                                                                         <span class="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-semibold text-amber-800">
                                                                             {{ __('Resurface') }}
                                                                         </span>
