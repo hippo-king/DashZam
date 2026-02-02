@@ -356,6 +356,11 @@
                                                                     </p>
                                                                 </div>
                                                                 <div class="flex flex-none items-center gap-2">
+                                                                    @if ($loop->first)
+                                                                        <span class="inline-flex items-center rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+                                                                            {{ __('Next') }}
+                                                                        </span>
+                                                                    @endif
                                                                     @if (!$isResurface && !$isCloseRink && count($lockerRoomList))
                                                                         <div class="flex items-center gap-2 ">
                                                                             @foreach ($lockerRoomList as $room)

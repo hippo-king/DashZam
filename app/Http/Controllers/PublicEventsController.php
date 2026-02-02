@@ -93,21 +93,9 @@ class PublicEventsController extends Controller
                 return $now->betweenIncluded($event['start'], $event['end']);
             });
 
-            if (!$liveEvent) {
-                $mockStart = $now->copy()->subMinutes(20);
-                $mockEnd = $now->copy()->addMinutes(40);
-                $liveEvent = [
-                    'id' => 'mock-' . strtolower(str_replace(' ', '-', $rinkName)),
-                    'resource_id' => $rinkName === 'Rink 2' ? 6 : 1,
-                    'title' => $rinkName === 'Rink 2' ? 'Public Skating (Mock)' : 'Open Hockey (Mock)',
-                    'start' => $mockStart,
-                    'end' => $mockEnd,
-                    'status' => 'Live',
-                    'is_mock' => true,
-                ];
+            if ($liveEvent) {
+                $liveEvents[$rinkName] = $liveEvent;
             }
-
-            $liveEvents[$rinkName] = $liveEvent;
         }
 
         foreach ($rinks as $rinkName => $rinkEvents) {
@@ -293,7 +281,7 @@ class PublicEventsController extends Controller
         }
 
         $occupiedSlotList = collect(array_keys($occupiedSlots))
-            ->map(fn ($slot) => (int) $slot)
+            ->map(fn($slot) => (int) $slot)
             ->sort()
             ->values()
             ->all();
