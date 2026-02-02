@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Support\LockerRoomParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -16,35 +17,7 @@ class PublicEventsController extends Controller
 
         $useMock = filter_var(env('EVENTS_USE_MOCK', false), FILTER_VALIDATE_BOOLEAN);
 
-        $latest = User::query()
-            ->whereNotNull('api_last_payload')
-            ->orderByDesc('api_last_fetched_at')
-            ->first();
-
-        $items = [];
-        if ($useMock) {
-            $items = $this->buildMockItems($now);
-        } elseif ($latest) {
-            $payload = $latest->api_last_payload;
-
-            if (is_string($payload)) {
-                $decodedPayload = json_decode($payload, true);
-                $payload = is_array($decodedPayload) ? $decodedPayload : null;
-            }
-
-            if (is_array($payload)) {
-                $body = $payload['body'] ?? null;
-
-                if (is_string($body)) {
-                    $decoded = json_decode($body, true);
-                    $body = is_array($decoded) ? $decoded : null;
-                }
-
-                if (is_array($body)) {
-                    $items = $this->extractItemsFromBody($body);
-                }
-            }
-        }
+        $items = $this->loadItems($now, $useMock, $latest);
 
         $events = collect($items)->map(function ($item) use ($now) {
             $attrs = $item['attributes'] ?? $item;
@@ -162,6 +135,218 @@ class PublicEventsController extends Controller
             'hasData' => $useMock || $latest !== null,
             'lastUpdatedAt' => $useMock ? $now : $latest?->api_last_fetched_at,
         ]);
+    }
+
+    public function timeline(Request $request)
+    {
+        $now = now();
+        $timezone = config('app.timezone');
+        $dayStart = $now->copy()->timezone($timezone)->startOfDay();
+        $dayEnd = $now->copy()->timezone($timezone)->endOfDay();
+
+        $useMock = filter_var(env('EVENTS_USE_MOCK', false), FILTER_VALIDATE_BOOLEAN);
+        $items = $this->loadItems($now, $useMock, $latest);
+
+        $events = collect($items)->map(function ($item) use ($now) {
+            $attrs = $item['attributes'] ?? $item;
+            $startRaw = $attrs['start'] ?? null;
+            $startDate = $attrs['start_date'] ?? null;
+            $startTime = $attrs['event_start_time'] ?? null;
+            if (!$startRaw && $startDate && $startTime) {
+                $startRaw = substr($startDate, 0, 10) . 'T' . $startTime;
+            }
+            if (!$startRaw && $startDate) {
+                $startRaw = $startDate;
+            }
+
+            $endRaw = $attrs['end'] ?? null;
+
+            $start = $startRaw ? Carbon::parse($startRaw) : null;
+            $end = $endRaw ? Carbon::parse($endRaw) : null;
+
+            if (!$start || !$end) {
+                return null;
+            }
+
+            $status = $now->betweenIncluded($start, $end) ? 'Live' : ($start->greaterThan($now) ? 'Upcoming' : 'Ended');
+
+            return [
+                'id' => $item['id'] ?? null,
+                'resource_id' => $attrs['resource_id'] ?? null,
+                'title' => $attrs['desc'] ?? $attrs['title'] ?? 'Event',
+                'start' => $start,
+                'end' => $end,
+                'status' => $status,
+                'is_close_rink' => false,
+            ];
+        })->filter()->filter(function ($event) use ($dayStart, $dayEnd, $timezone) {
+            $start = $event['start']->copy()->timezone($timezone);
+            $end = $event['end']->copy()->timezone($timezone);
+
+            return $end->greaterThanOrEqualTo($dayStart) && $start->lessThanOrEqualTo($dayEnd);
+        })->sortBy('start')->values();
+
+        $rinks = [
+            'Rink 1' => [],
+            'Rink 2' => [],
+        ];
+
+        foreach ($events as $event) {
+            $resourceId = (int) ($event['resource_id'] ?? 1);
+            $rinkKey = $resourceId === 6 ? 'Rink 2' : 'Rink 1';
+            $rinks[$rinkKey][] = $event;
+        }
+
+        foreach ($rinks as $rinkName => $rinkEvents) {
+            $lastTakedownIndex = null;
+
+            foreach ($rinkEvents as $index => $event) {
+                if (str_contains(strtolower($event['title'] ?? ''), 'takedown')) {
+                    if (!$lastTakedownIndex || $event['start']->greaterThan($rinkEvents[$lastTakedownIndex]['start'])) {
+                        $lastTakedownIndex = $index;
+                    }
+                }
+            }
+
+            if ($lastTakedownIndex !== null) {
+                $rinkEvents[$lastTakedownIndex]['is_close_rink'] = true;
+                $rinks[$rinkName] = $rinkEvents;
+            }
+        }
+
+        $timeline = [];
+        $occupiedSlots = [];
+
+        foreach ($rinks as $rinkName => $rinkEvents) {
+            foreach ($rinkEvents as $event) {
+                $title = $event['title'] ?? 'Event';
+                $lockerRooms = [];
+
+                if (preg_match_all('/\(([^)]+)\)/', $title, $matches)) {
+                    $lockerRooms = LockerRoomParser::extractFromTitle($title);
+                    $title = trim(preg_replace('/\s*\([^)]*\)\s*/', ' ', $title));
+                    $title = preg_replace('/\s{2,}/', ' ', $title);
+                }
+
+                $isResurface = str_contains(strtolower($title), 'takedown');
+                $isCloseRink = !empty($event['is_close_rink']);
+
+                if ($isCloseRink) {
+                    $displayTitle = 'Close Rink';
+                } elseif ($isResurface) {
+                    $displayTitle = 'Ice Resurfacing';
+                } else {
+                    $displayTitle = $title;
+                }
+
+                $requiresBravesCuts = false;
+
+                if (!$isCloseRink && !$isResurface) {
+                    $normalizedTitle = strtolower($displayTitle);
+                    $requiresBravesCuts = str_contains($normalizedTitle, 'spokane braves vs')
+                        && in_array('BR', $lockerRooms, true)
+                        && in_array('CH', $lockerRooms, true);
+                }
+
+                $start = $event['start']->copy()->timezone($timezone);
+                $end = $event['end']->copy()->timezone($timezone);
+
+                $clampedStart = $start->lessThan($dayStart) ? $dayStart->copy() : $start->copy();
+                $clampedEnd = $end->greaterThan($dayEnd) ? $dayEnd->copy() : $end->copy();
+
+                if ($clampedEnd->lessThanOrEqualTo($dayStart) || $clampedStart->greaterThanOrEqualTo($dayEnd)) {
+                    continue;
+                }
+
+                $startMinutes = $dayStart->diffInMinutes($clampedStart);
+                $endMinutes = $dayStart->diffInMinutes($clampedEnd);
+
+                $slotStart = intdiv($startMinutes, 15) + 1;
+                $slotEnd = (int) ceil($endMinutes / 15) + 1;
+
+                if ($slotEnd <= $slotStart) {
+                    $slotEnd = $slotStart + 1;
+                }
+
+                $slotRange = range($slotStart, $slotEnd - 1);
+                foreach ($slotRange as $slotIndex) {
+                    $occupiedSlots[$slotIndex] = true;
+                }
+
+                $timeline[$rinkName][] = [
+                    'id' => $event['id'] ?? null,
+                    'title' => $displayTitle,
+                    'start' => $start,
+                    'end' => $end,
+                    'locker_rooms' => $lockerRooms,
+                    'requires_braves_cuts' => $requiresBravesCuts,
+                    'is_resurface' => $isResurface,
+                    'is_close_rink' => $isCloseRink,
+                    'slot_start' => $slotStart,
+                    'slot_end' => $slotEnd,
+                ];
+            }
+
+            if (!isset($timeline[$rinkName])) {
+                $timeline[$rinkName] = [];
+            }
+        }
+
+        $occupiedSlotList = collect(array_keys($occupiedSlots))
+            ->map(fn ($slot) => (int) $slot)
+            ->sort()
+            ->values()
+            ->all();
+
+        return view('public.timeline', [
+            'dayStart' => $dayStart,
+            'dayEnd' => $dayEnd,
+            'rinks' => $rinks,
+            'timeline' => $timeline,
+            'occupiedSlots' => $occupiedSlotList,
+            'hasData' => $useMock || $latest !== null,
+            'lastUpdatedAt' => $useMock ? $now : $latest?->api_last_fetched_at,
+        ]);
+    }
+
+    private function loadItems(Carbon $now, bool $useMock, ?User &$latest = null): array
+    {
+        $latest = User::query()
+            ->whereNotNull('api_last_payload')
+            ->orderByDesc('api_last_fetched_at')
+            ->first();
+
+        if ($useMock) {
+            return $this->buildMockItems($now);
+        }
+
+        if (!$latest) {
+            return [];
+        }
+
+        $payload = $latest->api_last_payload;
+
+        if (is_string($payload)) {
+            $decodedPayload = json_decode($payload, true);
+            $payload = is_array($decodedPayload) ? $decodedPayload : null;
+        }
+
+        if (!is_array($payload)) {
+            return [];
+        }
+
+        $body = $payload['body'] ?? null;
+
+        if (is_string($body)) {
+            $decoded = json_decode($body, true);
+            $body = is_array($decoded) ? $decoded : null;
+        }
+
+        if (!is_array($body)) {
+            return [];
+        }
+
+        return $this->extractItemsFromBody($body);
     }
 
     private function buildMockItems(Carbon $now): array

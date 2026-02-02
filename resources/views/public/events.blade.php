@@ -9,6 +9,9 @@
                     <a href="{{ route('events.index') }}" class="text-sm font-medium text-gray-700 hover:text-gray-900">
                         {{ __('24-Hour View') }}
                     </a>
+                    <a href="{{ route('events.timeline') }}" class="text-sm font-medium text-gray-700 hover:text-gray-900">
+                        {{ __('Driver Timeline') }}
+                    </a>
                     @auth
                         <a href="{{ route('dashboard') }}" class="text-sm font-semibold text-gray-700 hover:text-gray-900">
                             {{ Auth::user()->name }}

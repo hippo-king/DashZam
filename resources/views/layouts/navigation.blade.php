@@ -18,6 +18,9 @@
                     <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')">
                         {{ __('Events') }}
                     </x-nav-link>
+                    <x-nav-link :href="route('events.timeline')" :active="request()->routeIs('events.timeline')">
+                        {{ __('Driver Timeline') }}
+                    </x-nav-link>
                     <x-nav-link :href="route('api-settings.edit')" :active="request()->routeIs('api-settings.*')">
                         {{ __('API Settings') }}
                     </x-nav-link>
@@ -78,6 +81,9 @@
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')">
                 {{ __('Events') }}
+            </x-responsive-nav-link>
+            <x-responsive-nav-link :href="route('events.timeline')" :active="request()->routeIs('events.timeline')">
+                {{ __('Driver Timeline') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('api-settings.edit')" :active="request()->routeIs('api-settings.*')">
                 {{ __('API Settings') }}
