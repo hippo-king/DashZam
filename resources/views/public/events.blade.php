@@ -34,7 +34,7 @@
     </div>
 
     <div class="py-10">
-        <div class="mx-auto max-w-6xl sm:px-6 lg:px-8">
+        <div class="mx-auto max-w-screen-2xl sm:px-6 lg:px-8">
             <div class="bg-white shadow-sm sm:rounded-lg">
                 <div class="p-6">
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -51,9 +51,15 @@
                                 </p>
                             </div>
                         </div>
-                        <span class="text-sm text-gray-400">
-                            {{ __('Live view shows ongoing and upcoming events.') }}
-                        </span>
+                        <div class="text-sm text-gray-400">
+                            <p>{{ __('Live view shows ongoing and upcoming events.') }}</p>
+                            @if ($lastUpdatedAt)
+                                <p class="mt-1 text-xs text-gray-500">
+                                    {{ __('Last updated:') }}
+                                    {{ $lastUpdatedAt->timezone('America/Los_Angeles')->format('M j, g:i A') }}
+                                </p>
+                            @endif
+                        </div>
                     </div>
 
                     <div class="mt-6">
@@ -227,7 +233,7 @@
                                                         <div class="h-2 w-full overflow-hidden rounded-full bg-emerald-100">
                                                             <div class="h-full rounded-full {{ $barClass }}" style="width: {{ $progress }}%"></div>
                                                         </div>
-                                                        <p class="mt-1 text-sm font-semibold text-green-500">
+                                                        <p class="mt-1 text-sm font-semibold liveProgress">
                                                             {{ $progress }}% {{ __('complete') }}
                                                         </p>
                                                     </div>

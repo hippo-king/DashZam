@@ -164,6 +164,12 @@
 
 .liveTime {
     color: #ef4444;
+    font-weight: bolder;
+}
+
+.liveProgress {
+    color: rgb(2, 54, 19);
+    font-weight: bold;
 }
 /* .liveContainer {
     background-color: rgb(161, 93, 93);

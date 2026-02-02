@@ -138,6 +138,7 @@ class PublicEventsController extends Controller
             'rinks' => $rinks,
             'liveEvents' => $liveEvents,
             'hasData' => $latest !== null,
+            'lastUpdatedAt' => $latest?->api_last_fetched_at,
         ]);
     }
 
