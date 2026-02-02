@@ -10,8 +10,11 @@ class PublicEventsController extends Controller
 {
     public function index(Request $request)
     {
+        $now = now();
         $windowStart = now();
         $windowEnd = now()->addDay();
+
+        $useMock = filter_var(env('EVENTS_USE_MOCK', false), FILTER_VALIDATE_BOOLEAN);
 
         $latest = User::query()
             ->whereNotNull('api_last_payload')
@@ -19,7 +22,9 @@ class PublicEventsController extends Controller
             ->first();
 
         $items = [];
-        if ($latest) {
+        if ($useMock) {
+            $items = $this->buildMockItems($now);
+        } elseif ($latest) {
             $payload = $latest->api_last_payload;
 
             if (is_string($payload)) {
@@ -41,7 +46,6 @@ class PublicEventsController extends Controller
             }
         }
 
-        $now = now();
         $events = collect($items)->map(function ($item) use ($now) {
             $attrs = $item['attributes'] ?? $item;
             $startRaw = $attrs['start'] ?? null;
@@ -155,9 +159,80 @@ class PublicEventsController extends Controller
             'windowEnd' => $windowEnd,
             'rinks' => $rinks,
             'liveEvents' => $liveEvents,
-            'hasData' => $latest !== null,
-            'lastUpdatedAt' => $latest?->api_last_fetched_at,
+            'hasData' => $useMock || $latest !== null,
+            'lastUpdatedAt' => $useMock ? $now : $latest?->api_last_fetched_at,
         ]);
+    }
+
+    private function buildMockItems(Carbon $now): array
+    {
+        $base = $now->copy()->timezone('America/Los_Angeles')->floorMinutes(15);
+
+        return [
+            // [
+            //     'id' => 'mock-r1-live',
+            //     'attributes' => [
+            //         'resource_id' => 1,
+            //         'desc' => 'Public Skating',
+            //         'start' => $base->copy()->subMinutes(15)->toIso8601String(),
+            //         'end' => $base->copy()->addMinutes(60)->toIso8601String(),
+            //     ],
+            // ],
+            [
+                'id' => 'mock-r1-live',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'desc' => 'Spokane Braves (BR) vs Williams Lake (CH)',
+                    'start' => $base->copy()->subMinutes(15)->toIso8601String(),
+                    'end' => $base->copy()->addMinutes(150)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r1-next',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'desc' => 'Jr. Chiefs Practice (CH, 1)',
+                    'start' => $base->copy()->addMinutes(60)->toIso8601String(),
+                    'end' => $base->copy()->addMinutes(120)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r1-close',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'desc' => 'Takedown',
+                    'start' => $base->copy()->addDay()->startOfDay()->addMinutes(15)->toIso8601String(),
+                    'end' => $base->copy()->addDay()->startOfDay()->addMinutes(45)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r2-live',
+                'attributes' => [
+                    'resource_id' => 6,
+                    'desc' => 'Open Hockey (5, 7)',
+                    'start' => $base->copy()->subMinutes(15)->toIso8601String(),
+                    'end' => $base->copy()->addMinutes(60)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r2-next',
+                'attributes' => [
+                    'resource_id' => 6,
+                    'desc' => 'Jr. Chiefs Practice (6, 8)',
+                    'start' => $base->copy()->addMinutes(75)->toIso8601String(),
+                    'end' => $base->copy()->addMinutes(135)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r2-takedown',
+                'attributes' => [
+                    'resource_id' => 6,
+                    'desc' => 'Takedown',
+                    'start' => $base->copy()->addHours(6)->toIso8601String(),
+                    'end' => $base->copy()->addHours(6)->addMinutes(15)->toIso8601String(),
+                ],
+            ],
+        ];
     }
 
     private function extractItemsFromBody(array $body): array
