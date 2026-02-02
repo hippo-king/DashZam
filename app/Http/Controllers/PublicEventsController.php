@@ -115,6 +115,23 @@ class PublicEventsController extends Controller
             $liveEvents[$rinkName] = $liveEvent;
         }
 
+        foreach ($rinks as $rinkName => $rinkEvents) {
+            $liveEvent = $liveEvents[$rinkName] ?? null;
+
+            if (!$liveEvent || !empty($liveEvent['is_mock'])) {
+                continue;
+            }
+
+            $rinks[$rinkName] = collect($rinkEvents)
+                ->reject(function ($event) use ($liveEvent) {
+                    return ($event['id'] ?? null) === ($liveEvent['id'] ?? null)
+                        && $event['start']->equalTo($liveEvent['start'])
+                        && $event['end']->equalTo($liveEvent['end']);
+                })
+                ->values()
+                ->all();
+        }
+
         return view('public.events', [
             'windowStart' => $windowStart,
             'windowEnd' => $windowEnd,

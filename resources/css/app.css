@@ -157,6 +157,19 @@
     background: #dc2626;
 }
 
+.liveTitle {
+    color: rgb(2, 0, 141);
+    font-weight: bold;
+}
+
+.liveTime {
+    color: #ef4444;
+}
+/* .liveContainer {
+    background-color: rgb(161, 93, 93);
+    border-radius: 10px;
+} */
+
 @keyframes live-pulse {
     0% {
         transform: scale(1);

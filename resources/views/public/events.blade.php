@@ -2,7 +2,7 @@
     <div x-data="{ navOpen: true }" class="sticky top-0 z-10 bg-white/90 backdrop-blur">
         <nav x-show="navOpen" class="border-b border-gray-200 bg-white">
             <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-                <div class="text-lg font-semibold text-gray-900">
+                <div class="text-xl font-semibold text-gray-100">
                     {{ __('Events') }}
                 </div>
                 <div class="flex items-center gap-4">
@@ -40,18 +40,18 @@
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <div>
                             <div class="flex flex-col gap-1">
-                                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                                <p class="text-sm font-semibold uppercase tracking-wide text-gray-400">
                                     {{ __('Current Time') }}
                                 </p>
-                                <p id="current-clock" class="text-2xl font-semibold text-gray-900">
+                                <p id="current-clock" class="text-3xl font-semibold text-gray-100">
                                     {{ now()->timezone('America/Los_Angeles')->format('l, M j · g:i:s A') }}
                                 </p>
-                                <p class="text-xs text-gray-500">
+                                <p class="text-sm text-gray-400">
                                     {{ __('PT') }}
                                 </p>
                             </div>
                         </div>
-                        <span class="text-xs text-gray-500">
+                        <span class="text-sm text-gray-400">
                             {{ __('Live view shows ongoing and upcoming events.') }}
                         </span>
                     </div>
@@ -68,23 +68,79 @@
                                         $liveEvent = $liveEvents[$rinkName] ?? null;
                                     @endphp
                                     @if ($liveEvent)
-                                        <div class="rounded-lg border border-gray-200 bg-emerald-50 px-4 py-3">
+                                        @php
+                                            $liveStart = $liveEvent['start'] ?? null;
+                                            $liveEnd = $liveEvent['end'] ?? null;
+                                            $progress = 0;
+                                            $barClass = 'bg-emerald-500';
+                                            $barPulse = false;
+                                            $liveTitle = $liveEvent['title'] ?? __('Live Event');
+                                            $liveLockerRooms = [];
+
+                                            if (preg_match_all('/\(([^)]+)\)/', $liveTitle, $matches)) {
+                                                $liveLockerRooms = \App\Support\LockerRoomParser::extractFromTitle($liveTitle);
+                                                $liveTitle = trim(preg_replace('/\s*\([^)]*\)\s*/', ' ', $liveTitle));
+                                                $liveTitle = preg_replace('/\s{2,}/', ' ', $liveTitle);
+                                            }
+
+                                            if ($liveStart && $liveEnd) {
+                                                $start = $liveStart->copy()->timezone('America/Los_Angeles');
+                                                $end = $liveEnd->copy()->timezone('America/Los_Angeles');
+                                                $nowTime = now()->timezone('America/Los_Angeles');
+                                                $duration = max(1, $end->getTimestamp() - $start->getTimestamp());
+                                                $elapsed = min($duration, max(0, $nowTime->getTimestamp() - $start->getTimestamp()));
+                                                $progress = (int) round(min(100, max(0, ($elapsed / $duration) * 100)));
+                                                if ($progress >= 90) {
+                                                    $barClass = 'bg-red-500 animate-pulse';
+                                                    $barPulse = true;
+                                                } elseif ($progress >= 75) {
+                                                    $barClass = 'bg-orange-500';
+                                                } elseif ($progress >= 51) {
+                                                    $barClass = 'bg-yellow-400';
+                                                } else {
+                                                    $barClass = 'bg-emerald-500';
+                                                }
+                                            }
+                                        @endphp
+                                        <div class="rounded-lg border border-red-300 bg-red-50/80 px-4 py-3 ring-2 ring-red-300/60 shadow-sm">
                                             <div class="flex flex-col items-center gap-2 text-center">
-                                                <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                                <span class="inline-flex items-center gap-2 rounded-full bg-red-200 px-4 py-1.5 text-sm font-semibold text-red-900">
                                                     <span class="live-pulse" aria-hidden="true"></span>
                                                     {{ $rinkName }} · {{ __('Live Now') }}
                                                 </span>
-                                                <h2 class="text-base font-semibold text-gray-900">
-                                                    {{ $liveEvent['title'] ?? __('Live Event') }}
+                                                <h2 class="text-xl font-semibold text-gray-100">
+                                                    {{ $liveTitle }}
                                                     @if (!empty($liveEvent['is_mock']))
                                                         <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
                                                     @endif
                                                 </h2>
-                                                <p class="text-sm text-gray-600">
-                                                    {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
-                                                    —
-                                                    {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
-                                                </p>
+                                                <div class="flex w-full items-center justify-between gap-3 text-base text-gray-200">
+                                                    <span>
+                                                        {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                        —
+                                                        {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                    </span>
+                                                    @if (count($liveLockerRooms))
+                                                        <div class="flex items-center gap-2">
+                                                            <span class="text-sm font-semibold uppercase tracking-wide text-gray-400">
+                                                                {{ __('Lockers') }}
+                                                            </span>
+                                                            @foreach ($liveLockerRooms as $room)
+                                                                <span class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-semibold text-gray-800">
+                                                                    {{ $room }}
+                                                                </span>
+                                                            @endforeach
+                                                        </div>
+                                                    @endif
+                                                </div>
+                                                <div class="w-full">
+                                                    <div class="h-2 w-full overflow-hidden rounded-full bg-emerald-100">
+                                                        <div class="h-full rounded-full {{ $barClass }}" style="width: {{ $progress }}%"></div>
+                                                    </div>
+                                                    <p class="mt-1 text-sm font-semibold text-green-500">
+                                                        {{ $progress }}% {{ __('complete') }}
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
                                     @endif
@@ -94,7 +150,7 @@
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 @foreach ($rinks as $rinkName => $events)
                                     <div class="rounded-lg border border-gray-200 bg-white w-full">
-                                        <div class="border-b border-gray-200 px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                                        <div class="border-b border-gray-200 px-4 py-3 text-center text-base font-semibold text-gray-200">
                                             {{ $rinkName }}
                                         </div>
                                         @php
@@ -102,23 +158,79 @@
                                         @endphp
                                         @if ($liveEvent)
                                             <div class="hidden sm:block">
-                                            <div class="border-b border-gray-200 bg-emerald-50 px-4 py-3">
-                                                <div class="flex flex-col items-center gap-2 text-center">
-                                                    <span class="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-3 py-1 text-xs font-semibold text-emerald-700">
+                                            @php
+                                                $liveStart = $liveEvent['start'] ?? null;
+                                                $liveEnd = $liveEvent['end'] ?? null;
+                                                $progress = 0;
+                                                $barClass = 'bg-emerald-500';
+                                                $barPulse = false;
+                                                $liveTitle = $liveEvent['title'] ?? __('Live Event');
+                                                $liveLockerRooms = [];
+
+                                                if (preg_match_all('/\(([^)]+)\)/', $liveTitle, $matches)) {
+                                                    $liveLockerRooms = \App\Support\LockerRoomParser::extractFromTitle($liveTitle);
+                                                    $liveTitle = trim(preg_replace('/\s*\([^)]*\)\s*/', ' ', $liveTitle));
+                                                    $liveTitle = preg_replace('/\s{2,}/', ' ', $liveTitle);
+                                                }
+
+                                                if ($liveStart && $liveEnd) {
+                                                    $start = $liveStart->copy()->timezone('America/Los_Angeles');
+                                                    $end = $liveEnd->copy()->timezone('America/Los_Angeles');
+                                                    $nowTime = now()->timezone('America/Los_Angeles');
+                                                    $duration = max(1, $end->getTimestamp() - $start->getTimestamp());
+                                                    $elapsed = min($duration, max(0, $nowTime->getTimestamp() - $start->getTimestamp()));
+                                                    $progress = (int) round(min(100, max(0, ($elapsed / $duration) * 100)));
+                                                    if ($progress >= 90) {
+                                                        $barClass = 'bg-red-500 animate-pulse';
+                                                        $barPulse = true;
+                                                    } elseif ($progress >= 75) {
+                                                        $barClass = 'bg-orange-500';
+                                                    } elseif ($progress >= 51) {
+                                                        $barClass = 'bg-yellow-400';
+                                                    } else {
+                                                        $barClass = 'bg-emerald-500';
+                                                    }
+                                                }
+                                            @endphp
+                                            <div class="border-b border-red-300 bg-red-50/80 px-2 py-1 shadow-md">
+                                                <div class="flex flex-col items-center gap-2 text-center liveContainer">
+                                                    <span class="inline-flex items-center gap-2 rounded-full bg-red-200 px-4 py-1.5 text-sm font-semibold text-red-900">
                                                         <span class="live-pulse" aria-hidden="true"></span>
                                                         {{ __('Live Now') }}
                                                     </span>
-                                                    <h2 class="text-base font-semibold text-gray-900">
-                                                        {{ $liveEvent['title'] ?? __('Live Event') }}
+                                                    <h2 class="text-xl font-semibold text-gray-100 liveTitle">
+                                                        {{ $liveTitle }}
                                                         @if (!empty($liveEvent['is_mock']))
                                                             <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
                                                         @endif
                                                     </h2>
-                                                    <p class="text-sm text-gray-600">
-                                                        {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
-                                                        —
-                                                        {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
-                                                    </p>
+                                                    <div class="flex w-full items-center justify-between gap-3">
+                                                        <span class=" liveTime">
+                                                            {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                            —
+                                                            {{ $liveEvent['end']->timezone('America/Los_Angeles')->format('g:i A') }}
+                                                        </span>
+                                                        @if (count($liveLockerRooms))
+                                                            <div class="flex items-center gap-2">
+                                                                <span class="text-sm font-semibold uppercase tracking-wide text-gray-400">
+                                                                    {{ __('Lockers') }}
+                                                                </span>
+                                                                @foreach ($liveLockerRooms as $room)
+                                                                    <span class="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-3 py-1 text-sm font-semibold text-gray-800">
+                                                                        {{ $room }}
+                                                                    </span>
+                                                                @endforeach
+                                                            </div>
+                                                        @endif
+                                                    </div>
+                                                    <div class="w-full">
+                                                        <div class="h-2 w-full overflow-hidden rounded-full bg-emerald-100">
+                                                            <div class="h-full rounded-full {{ $barClass }}" style="width: {{ $progress }}%"></div>
+                                                        </div>
+                                                        <p class="mt-1 text-sm font-semibold text-green-500">
+                                                            {{ $progress }}% {{ __('complete') }}
+                                                        </p>
+                                                    </div>
                                                 </div>
                                             </div>
                                             </div>
@@ -224,6 +336,7 @@
 
             updateClock();
             setInterval(updateClock, 1000);
+            setInterval(() => window.location.reload(), 60000);
         })();
     </script>
 </x-guest-layout>
