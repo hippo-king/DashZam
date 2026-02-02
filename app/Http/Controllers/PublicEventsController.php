@@ -167,6 +167,7 @@ class PublicEventsController extends Controller
     private function buildMockItems(Carbon $now): array
     {
         $base = $now->copy()->timezone('America/Los_Angeles')->floorMinutes(15);
+        $newBase = $base;
 
         return [
             // [
@@ -184,16 +185,7 @@ class PublicEventsController extends Controller
                     'resource_id' => 1,
                     'desc' => 'Spokane Braves (BR) vs Williams Lake (CH)',
                     'start' => $base->copy()->subMinutes(15)->toIso8601String(),
-                    'end' => $base->copy()->addMinutes(150)->toIso8601String(),
-                ],
-            ],
-            [
-                'id' => 'mock-r1-next',
-                'attributes' => [
-                    'resource_id' => 1,
-                    'desc' => 'Jr. Chiefs Practice (CH, 1)',
-                    'start' => $base->copy()->addMinutes(60)->toIso8601String(),
-                    'end' => $base->copy()->addMinutes(120)->toIso8601String(),
+                    'end' => $newBase = $base->copy()->addMinutes(150),
                 ],
             ],
             [
@@ -201,8 +193,26 @@ class PublicEventsController extends Controller
                 'attributes' => [
                     'resource_id' => 1,
                     'desc' => 'Takedown',
-                    'start' => $base->copy()->addDay()->startOfDay()->addMinutes(15)->toIso8601String(),
-                    'end' => $base->copy()->addDay()->startOfDay()->addMinutes(45)->toIso8601String(),
+                    'start' => $newBase->copy()->toIso8601String(),
+                    'end' => $newBase->copy()->addMinutes(15)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r1-next',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'desc' => 'Jr. Chiefs Practice (CH, 1)',
+                    'start' => $newBase->copy()->addMinutes(15)->toIso8601String(),
+                    'end' => $newBase = $newBase->copy()->addMinutes(120),
+                ],
+            ],
+            [
+                'id' => 'mock-r1-close',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'desc' => 'Takedown',
+                    'start' => $newBase->copy(),
+                    'end' => $newBase->copy()->addDay()->startOfDay()->addMinutes(45)->toIso8601String(),
                 ],
             ],
             [
@@ -212,6 +222,15 @@ class PublicEventsController extends Controller
                     'desc' => 'Open Hockey (5, 7)',
                     'start' => $base->copy()->subMinutes(15)->toIso8601String(),
                     'end' => $base->copy()->addMinutes(60)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r2-takedown1',
+                'attributes' => [
+                    'resource_id' => 6,
+                    'desc' => 'Takedown',
+                    'start' => $base->copy()->addHours(1)->toIso8601String(),
+                    'end' => $base->copy()->addHours(1)->addMinutes(15)->toIso8601String(),
                 ],
             ],
             [
@@ -228,8 +247,8 @@ class PublicEventsController extends Controller
                 'attributes' => [
                     'resource_id' => 6,
                     'desc' => 'Takedown',
-                    'start' => $base->copy()->addHours(6)->toIso8601String(),
-                    'end' => $base->copy()->addHours(6)->addMinutes(15)->toIso8601String(),
+                    'start' => $base->copy()->addMinutes(135)->toIso8601String(),
+                    'end' => $base->copy()->addMinutes(150)->toIso8601String(),
                 ],
             ],
         ];
