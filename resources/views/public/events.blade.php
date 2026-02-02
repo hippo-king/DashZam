@@ -78,6 +78,7 @@
                                             $liveStart = $liveEvent['start'] ?? null;
                                             $liveEnd = $liveEvent['end'] ?? null;
                                             $progress = 0;
+                                            $pulseDuration = 1.6;
                                             $barClass = 'bg-emerald-500';
                                             $barPulse = false;
                                             $liveTitle = $liveEvent['title'] ?? __('Live Event');
@@ -120,6 +121,7 @@
                                                 } else {
                                                     $barClass = 'bg-emerald-500';
                                                 }
+                                                $pulseDuration = max(0.6, 1.8 - (1.2 * ($progress / 100)));
                                             }
                                         @endphp
                                         <div class="rounded-lg border border-red-300 bg-red-50/80 px-4 py-3 ring-2 ring-red-300/60 shadow-sm">
@@ -127,9 +129,9 @@
                                                 <div class="flex items-center gap-3">
                                                     <span class="inline-flex items-center gap-2 rounded-full bg-red-200 px-4 py-1.5 text-sm font-semibold text-red-900">
                                                         <span class="live-pulse" aria-hidden="true"></span>
-                                                        {{ $rinkName }} · {{ __('Live Now') }}
+                                                        {{ $rinkName }} · {{ __('Live') }}
                                                     </span>
-                                                    <h2 class="text-xl font-semibold text-gray-100 text-center flex-1">
+                                                    <h2 class="text-xl font-semibold text-gray-100 text-center flex-1 liveTitle">
                                                         {{ $liveTitle }}
                                                         @if (!empty($liveEvent['is_mock']))
                                                             <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
@@ -137,7 +139,7 @@
                                                     </h2>
                                                 </div>
                                                 <div class="flex w-full items-center justify-between gap-3 text-base text-gray-200">
-                                                    <span>
+                                                    <span class=" liveTime">
                                                         {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
                                                         @unless ($isCloseRink)
                                                             —
@@ -164,7 +166,7 @@
                                                 @endif
                                                 <div class="w-full">
                                                     <div class="relative h-2 w-full overflow-hidden rounded-full bg-emerald-100">
-                                                        <div class="h-full rounded-full {{ $barClass }}" style="width: {{ $progress }}%"></div>
+                                                        <div class="h-full rounded-full {{ $barClass }} animate-pulse" style="width: {{ $progress }}%; animation-duration: {{ $pulseDuration }}s;"></div>
                                                         @if ($requiresBravesCuts)
                                                             <span class="absolute inset-y-0 left-[25%] w-1 bg-amber-400/80 animate-pulse"></span>
                                                             <span class="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 bg-amber-400/80 animate-pulse"></span>
@@ -196,6 +198,7 @@
                                                 $liveStart = $liveEvent['start'] ?? null;
                                                 $liveEnd = $liveEvent['end'] ?? null;
                                                 $progress = 0;
+                                                $pulseDuration = 1.6;
                                                 $barClass = 'bg-emerald-500';
                                                 $barPulse = false;
                                                 $liveTitle = $liveEvent['title'] ?? __('Live Event');
@@ -238,6 +241,7 @@
                                                     } else {
                                                         $barClass = 'bg-emerald-500';
                                                     }
+                                                    $pulseDuration = max(0.6, 1.8 - (1.2 * ($progress / 100)));
                                                 }
                                             @endphp
                                             <div class="border-b border-red-300 bg-red-50/80 px-2 py-1 shadow-md">
@@ -282,7 +286,7 @@
                                                     @endif
                                                     <div class="w-full">
                                                         <div class="relative h-2 w-full overflow-hidden rounded-full bg-emerald-100">
-                                                            <div class="h-full rounded-full {{ $barClass }}" style="width: {{ $progress }}%"></div>
+                                                            <div class="h-full rounded-full {{ $barClass }} animate-pulse" style="width: {{ $progress }}%; animation-duration: {{ $pulseDuration }}s;"></div>
                                                             @if ($requiresBravesCuts)
                                                                 <span class="absolute inset-y-0 left-[25%] w-1 bg-amber-400/80 animate-pulse"></span>
                                                                 <span class="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 bg-amber-400/80 animate-pulse"></span>
