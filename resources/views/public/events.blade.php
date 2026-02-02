@@ -84,6 +84,7 @@
                                             $isLiveResurface = str_contains(strtolower($liveTitle), 'takedown');
                                             $isCloseRink = !empty($liveEvent['is_close_rink']);
                                             $liveLockerRooms = [];
+                                            $requiresBravesCuts = false;
 
                                             if ($isCloseRink) {
                                                 $liveTitle = __('Close Rink');
@@ -93,6 +94,13 @@
                                                 $liveLockerRooms = \App\Support\LockerRoomParser::extractFromTitle($liveTitle);
                                                 $liveTitle = trim(preg_replace('/\s*\([^)]*\)\s*/', ' ', $liveTitle));
                                                 $liveTitle = preg_replace('/\s{2,}/', ' ', $liveTitle);
+                                            }
+
+                                            if (!$isCloseRink && !$isLiveResurface) {
+                                                $normalizedTitle = strtolower($liveTitle);
+                                                $requiresBravesCuts = str_contains($normalizedTitle, 'spokane braves vs')
+                                                    && in_array('BR', $liveLockerRooms, true)
+                                                    && in_array('CH', $liveLockerRooms, true);
                                             }
 
                                             if ($liveStart && $liveEnd) {
@@ -115,17 +123,19 @@
                                             }
                                         @endphp
                                         <div class="rounded-lg border border-red-300 bg-red-50/80 px-4 py-3 ring-2 ring-red-300/60 shadow-sm">
-                                            <div class="flex flex-col items-center gap-2 text-center">
-                                                <span class="inline-flex items-center gap-2 rounded-full bg-red-200 px-4 py-1.5 text-sm font-semibold text-red-900">
-                                                    <span class="live-pulse" aria-hidden="true"></span>
-                                                    {{ $rinkName }} · {{ __('Live Now') }}
-                                                </span>
-                                                <h2 class="text-xl font-semibold text-gray-100">
-                                                    {{ $liveTitle }}
-                                                    @if (!empty($liveEvent['is_mock']))
-                                                        <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
-                                                    @endif
-                                                </h2>
+                                            <div class="flex flex-col gap-2">
+                                                <div class="flex items-center gap-3">
+                                                    <span class="inline-flex items-center gap-2 rounded-full bg-red-200 px-4 py-1.5 text-sm font-semibold text-red-900">
+                                                        <span class="live-pulse" aria-hidden="true"></span>
+                                                        {{ $rinkName }} · {{ __('Live Now') }}
+                                                    </span>
+                                                    <h2 class="text-xl font-semibold text-gray-100 text-center flex-1">
+                                                        {{ $liveTitle }}
+                                                        @if (!empty($liveEvent['is_mock']))
+                                                            <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
+                                                        @endif
+                                                    </h2>
+                                                </div>
                                                 <div class="flex w-full items-center justify-between gap-3 text-base text-gray-200">
                                                     <span>
                                                         {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
@@ -147,9 +157,19 @@
                                                         </div>
                                                     @endif
                                                 </div>
+                                                @if ($requiresBravesCuts)
+                                                    <div class="w-full rounded-md border border-amber-300 bg-amber-100/80 px-3 py-2 text-sm font-semibold text-amber-900">
+                                                        {{ __('Ice resurfacing required between each period.') }}
+                                                    </div>
+                                                @endif
                                                 <div class="w-full">
-                                                    <div class="h-2 w-full overflow-hidden rounded-full bg-emerald-100">
+                                                    <div class="relative h-2 w-full overflow-hidden rounded-full bg-emerald-100">
                                                         <div class="h-full rounded-full {{ $barClass }}" style="width: {{ $progress }}%"></div>
+                                                        @if ($requiresBravesCuts)
+                                                            <span class="absolute inset-y-0 left-[25%] w-1 bg-amber-400/80 animate-pulse"></span>
+                                                            <span class="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 bg-amber-400/80 animate-pulse"></span>
+                                                            <span class="absolute inset-y-0 left-[75%] w-1 bg-amber-400/80 animate-pulse"></span>
+                                                        @endif
                                                     </div>
                                                     <p class="mt-1 text-sm font-semibold text-green-500">
                                                         {{ $progress }}% {{ __('complete') }}
@@ -182,6 +202,7 @@
                                                 $isLiveResurface = str_contains(strtolower($liveTitle), 'takedown');
                                                 $isCloseRink = !empty($liveEvent['is_close_rink']);
                                                 $liveLockerRooms = [];
+                                                $requiresBravesCuts = false;
 
                                                 if ($isCloseRink) {
                                                     $liveTitle = __('Close Rink');
@@ -191,6 +212,13 @@
                                                     $liveLockerRooms = \App\Support\LockerRoomParser::extractFromTitle($liveTitle);
                                                     $liveTitle = trim(preg_replace('/\s*\([^)]*\)\s*/', ' ', $liveTitle));
                                                     $liveTitle = preg_replace('/\s{2,}/', ' ', $liveTitle);
+                                                }
+
+                                                if (!$isCloseRink && !$isLiveResurface) {
+                                                    $normalizedTitle = strtolower($liveTitle);
+                                                    $requiresBravesCuts = str_contains($normalizedTitle, 'spokane braves vs')
+                                                        && in_array('BR', $liveLockerRooms, true)
+                                                        && in_array('CH', $liveLockerRooms, true);
                                                 }
 
                                                 if ($liveStart && $liveEnd) {
@@ -213,17 +241,19 @@
                                                 }
                                             @endphp
                                             <div class="border-b border-red-300 bg-red-50/80 px-2 py-1 shadow-md">
-                                                <div class="flex flex-col items-center gap-2 text-center liveContainer">
-                                                    <span class="inline-flex items-center gap-2 rounded-full bg-red-200 px-4 py-1.5 text-sm font-semibold text-red-900">
-                                                        <span class="live-pulse" aria-hidden="true"></span>
-                                                        {{ __('Live Now') }}
-                                                    </span>
-                                                    <h2 class="text-xl font-semibold text-gray-100 liveTitle">
-                                                        {{ $liveTitle }}
-                                                        @if (!empty($liveEvent['is_mock']))
-                                                            <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
-                                                        @endif
-                                                    </h2>
+                                                <div class="flex flex-col gap-2 liveContainer">
+                                                    <div class="flex items-center gap-3">
+                                                        <span class="inline-flex items-center gap-2 rounded-full bg-red-200 px-4 py-1.5 text-sm font-semibold text-red-900">
+                                                            <span class="live-pulse" aria-hidden="true"></span>
+                                                            {{ __('Live') }}
+                                                        </span>
+                                                        <h2 class="text-xl font-semibold text-gray-100 liveTitle text-center flex-1">
+                                                            {{ $liveTitle }}
+                                                            @if (!empty($liveEvent['is_mock']))
+                                                                <span class="text-xs font-semibold text-emerald-700">{{ __('(Mock)') }}</span>
+                                                            @endif
+                                                        </h2>
+                                                    </div>
                                                     <div class="flex w-full items-center justify-between gap-3">
                                                         <span class=" liveTime">
                                                             {{ $liveEvent['start']->timezone('America/Los_Angeles')->format('g:i A') }}
@@ -245,9 +275,19 @@
                                                             </div>
                                                         @endif
                                                     </div>
+                                                    @if ($requiresBravesCuts)
+                                                        <div class="w-full rounded-md border border-amber-300 bg-amber-100/80 px-3 py-2 text-sm font-semibold text-amber-900">
+                                                            {{ __('Ice resurfacing required between each period.') }}
+                                                        </div>
+                                                    @endif
                                                     <div class="w-full">
-                                                        <div class="h-2 w-full overflow-hidden rounded-full bg-emerald-100">
+                                                        <div class="relative h-2 w-full overflow-hidden rounded-full bg-emerald-100">
                                                             <div class="h-full rounded-full {{ $barClass }}" style="width: {{ $progress }}%"></div>
+                                                            @if ($requiresBravesCuts)
+                                                                <span class="absolute inset-y-0 left-[25%] w-1 bg-amber-400/80 animate-pulse"></span>
+                                                                <span class="absolute inset-y-0 left-1/2 w-1 -translate-x-1/2 bg-amber-400/80 animate-pulse"></span>
+                                                                <span class="absolute inset-y-0 left-[75%] w-1 bg-amber-400/80 animate-pulse"></span>
+                                                            @endif
                                                         </div>
                                                         <p class="mt-1 text-sm font-semibold liveProgress">
                                                             {{ $progress }}% {{ __('complete') }}
@@ -370,9 +410,17 @@
                 clock.textContent = formatter.format(new Date());
             };
 
+            const scheduleRefresh = () => {
+                const now = new Date();
+                const delay = ((60 - now.getSeconds()) * 1000) + 5000 - now.getMilliseconds();
+                setTimeout(() => {
+                    window.location.reload();
+                }, Math.max(0, delay));
+            };
+
             updateClock();
             setInterval(updateClock, 1000);
-            setInterval(() => window.location.reload(), 60000);
+            scheduleRefresh();
         })();
     </script>
 </x-guest-layout>
