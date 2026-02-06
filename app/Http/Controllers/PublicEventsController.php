@@ -71,19 +71,46 @@ class PublicEventsController extends Controller
         }
 
         foreach ($rinks as $rinkName => $rinkEvents) {
-            $lastTakedownIndex = null;
+            $lastEventIndex = null;
 
             foreach ($rinkEvents as $index => $event) {
-                if (str_contains(strtolower($event['title'] ?? ''), 'takedown')) {
-                    if (!$lastTakedownIndex || $event['start']->greaterThan($rinkEvents[$lastTakedownIndex]['start'])) {
-                        $lastTakedownIndex = $index;
-                    }
+                if ($lastEventIndex === null || $event['start']->greaterThan($rinkEvents[$lastEventIndex]['start'])) {
+                    $lastEventIndex = $index;
                 }
             }
 
-            if ($lastTakedownIndex !== null) {
-                $rinkEvents[$lastTakedownIndex]['is_close_rink'] = true;
-                $rinks[$rinkName] = $rinkEvents;
+            if ($lastEventIndex !== null) {
+                $lastEventTitle = strtolower($rinkEvents[$lastEventIndex]['title'] ?? '');
+                if (str_contains($lastEventTitle, 'takedown')) {
+                    $rinkEvents[$lastEventIndex]['is_close_rink'] = true;
+                }
+                $hasCloseRink = collect($rinkEvents)->contains(function ($event) {
+                    return !empty($event['is_close_rink']);
+                });
+
+                if (!$hasCloseRink) {
+                    $lastEvent = $rinkEvents[$lastEventIndex];
+                    $closeStart = $lastEvent['end']->copy();
+                    $closeEnd = $closeStart->copy()->addMinutes(15);
+                    $closeStatus = $now->betweenIncluded($closeStart, $closeEnd)
+                        ? 'Live'
+                        : ($closeStart->greaterThan($now) ? 'Upcoming' : 'Ended');
+
+                    $rinkEvents[] = [
+                        'id' => null,
+                        'resource_id' => $lastEvent['resource_id'] ?? null,
+                        'title' => 'Close Rink',
+                        'start' => $closeStart,
+                        'end' => $closeEnd,
+                        'status' => $closeStatus,
+                        'is_close_rink' => true,
+                    ];
+                }
+
+                $rinks[$rinkName] = collect($rinkEvents)
+                    ->sortBy('start')
+                    ->values()
+                    ->all();
             }
         }
 
@@ -186,19 +213,46 @@ class PublicEventsController extends Controller
         }
 
         foreach ($rinks as $rinkName => $rinkEvents) {
-            $lastTakedownIndex = null;
+            $lastEventIndex = null;
 
             foreach ($rinkEvents as $index => $event) {
-                if (str_contains(strtolower($event['title'] ?? ''), 'takedown')) {
-                    if (!$lastTakedownIndex || $event['start']->greaterThan($rinkEvents[$lastTakedownIndex]['start'])) {
-                        $lastTakedownIndex = $index;
-                    }
+                if ($lastEventIndex === null || $event['start']->greaterThan($rinkEvents[$lastEventIndex]['start'])) {
+                    $lastEventIndex = $index;
                 }
             }
 
-            if ($lastTakedownIndex !== null) {
-                $rinkEvents[$lastTakedownIndex]['is_close_rink'] = true;
-                $rinks[$rinkName] = $rinkEvents;
+            if ($lastEventIndex !== null) {
+                $lastEventTitle = strtolower($rinkEvents[$lastEventIndex]['title'] ?? '');
+                if (str_contains($lastEventTitle, 'takedown')) {
+                    $rinkEvents[$lastEventIndex]['is_close_rink'] = true;
+                }
+                $hasCloseRink = collect($rinkEvents)->contains(function ($event) {
+                    return !empty($event['is_close_rink']);
+                });
+
+                if (!$hasCloseRink) {
+                    $lastEvent = $rinkEvents[$lastEventIndex];
+                    $closeStart = $lastEvent['end']->copy();
+                    $closeEnd = $closeStart->copy()->addMinutes(15);
+                    $closeStatus = $now->betweenIncluded($closeStart, $closeEnd)
+                        ? 'Live'
+                        : ($closeStart->greaterThan($now) ? 'Upcoming' : 'Ended');
+
+                    $rinkEvents[] = [
+                        'id' => null,
+                        'resource_id' => $lastEvent['resource_id'] ?? null,
+                        'title' => 'Close Rink',
+                        'start' => $closeStart,
+                        'end' => $closeEnd,
+                        'status' => $closeStatus,
+                        'is_close_rink' => true,
+                    ];
+                }
+
+                $rinks[$rinkName] = collect($rinkEvents)
+                    ->sortBy('start')
+                    ->values()
+                    ->all();
             }
         }
 

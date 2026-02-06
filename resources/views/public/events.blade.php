@@ -329,6 +329,7 @@
 
                                                             $isResurface = str_contains(strtolower($title), 'takedown');
                                                             $isCloseRink = !empty($event['is_close_rink']);
+                                                            $isAlert = $isCloseRink || $isResurface;
                                                             if ($isCloseRink) {
                                                                 $displayTitle = __('Close Rink');
                                                             } elseif ($isResurface) {
@@ -337,19 +338,19 @@
                                                                 $displayTitle = $title;
                                                             }
                                                         @endphp
-                                                        <div class="rounded-lg p-4 shadow-sm {{ $isCloseRink ? 'bg-amber-100/80 border border-amber-300 ring-2 ring-amber-300/70' : ($isResurface ? 'bg-amber-50/80 border border-amber-200 ring-1 ring-amber-200/70' : 'bg-gray-50') }}">
+                                                            <div class="rounded-lg p-4 shadow-sm {{ $isCloseRink ? 'bg-amber-100/80 border border-amber-300 ring-2 ring-amber-300/70' : ($isResurface ? 'bg-amber-50/80 border border-amber-200 ring-1 ring-amber-200/70' : 'bg-gray-50') }}">
                                                             <div class="flex items-center justify-between gap-3">
                                                                 <div class="min-w-0 flex-1">
-                                                                    <h2 class="text-base font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
+                                                                    <h2 class="text-base font-semibold {{ $isAlert ? 'text-amber-900' : 'text-gray-900' }}">
                                                                         {{ $displayTitle }}
                                                                     </h2>
-                                                                    <p class="text-sm {{ $isResurface ? 'text-amber-800' : 'text-gray-600' }}">
-                                                                        <span class="font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
+                                                                    <p class="text-sm {{ $isAlert ? 'text-amber-800' : 'text-gray-600' }}">
+                                                                        <span class="font-semibold {{ $isAlert ? 'text-amber-900' : 'text-gray-900' }}">
                                                                             {{ $event['start']->timezone('America/Los_Angeles')->format('g:i A') }}
                                                                         </span>
                                                                         @unless ($isCloseRink)
                                                                             —
-                                                                            <span class="font-semibold {{ $isResurface ? 'text-amber-900' : 'text-gray-900' }}">
+                                                                            <span class="font-semibold {{ $isAlert ? 'text-amber-900' : 'text-gray-900' }}">
                                                                                 {{ $event['end']->timezone('America/Los_Angeles')->format('g:i A') }}
                                                                             </span>
                                                                         @endunless
