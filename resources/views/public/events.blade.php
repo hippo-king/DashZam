@@ -311,7 +311,44 @@
                                                 </p>
                                             @else
                                                 <div class="space-y-4">
+                                                    @php
+                                                        $previousDateLabel = null;
+                                                        $windowDayStart = $windowStart->copy()->timezone('America/Los_Angeles')->startOfDay();
+                                                        $midnightBoundary = $windowDayStart->copy()->addDay();
+                                                        $midnightInserted = false;
+                                                    @endphp
                                                     @foreach ($events as $event)
+                                                        @php
+                                                            $eventStart = $event['start']->timezone('America/Los_Angeles');
+                                                            $eventDateLabel = $eventStart->format('Y-m-d');
+                                                        @endphp
+                                                        @if (!$midnightInserted && $eventStart->greaterThanOrEqualTo($midnightBoundary))
+                                                            <div class="flex items-center gap-3">
+                                                                <div class="h-px flex-1 bg-gray-300"></div>
+                                                                <span class="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                                                                    {{ $eventStart->format('M j, Y') }}
+                                                                </span>
+                                                                <div class="h-px flex-1 bg-gray-300"></div>
+                                                            </div>
+                                                            @php
+                                                                $midnightInserted = true;
+                                                            @endphp
+                                                        @endif
+                                                        @if ($previousDateLabel !== null && $eventDateLabel !== $previousDateLabel && $midnightInserted === false)
+                                                            <div class="flex items-center gap-3">
+                                                                <div class="h-px flex-1 bg-gray-300"></div>
+                                                                <span class="text-xs font-semibold uppercase tracking-wide text-gray-600">
+                                                                    {{ $eventStart->format('M j, Y') }}
+                                                                </span>
+                                                                <div class="h-px flex-1 bg-gray-300"></div>
+                                                            </div>
+                                                            @php
+                                                                $midnightInserted = true;
+                                                            @endphp
+                                                        @endif
+                                                        @php
+                                                            $previousDateLabel = $eventDateLabel;
+                                                        @endphp
                                                         @php
                                                             $title = $event['title'] ?? __('Event');
                                                             $lockerRooms = null;

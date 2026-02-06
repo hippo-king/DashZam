@@ -67,13 +67,14 @@
                                         @php
                                             $slotTime = $dayStart->copy()->addMinutes(($slotIndex - 1) * 15);
                                             $isHour = $slotTime->minute === 0;
+                                            $isMidnight = $slotTime->format('H:i') === '00:00';
                                             $label = $isHour ? $slotTime->format('g A') : $slotTime->format('g:i');
                                             $rowIndex = $loop->index + 1;
                                         @endphp
-                                        <div class="border-b border-gray-200 pr-2 text-right text-[10px] timeline-time {{ $isHour ? 'font-semibold text-gray-700' : 'text-gray-400' }}" style="grid-column: 1; grid-row: {{ $rowIndex }};">
-                                            {{ $label }}
+                                        <div class="border-b border-gray-200 pr-2 text-right text-[10px] timeline-time {{ $isMidnight ? 'font-semibold text-gray-900' : ($isHour ? 'font-semibold text-gray-700' : 'text-gray-400') }}" style="grid-column: 1; grid-row: {{ $rowIndex }};">
+                                            {{ $isMidnight ? __('Midnight') : $label }}
                                         </div>
-                                        <div class="border-b border-gray-100 timeline-row" style="grid-column: 2 / span {{ $rinkCount }}; grid-row: {{ $rowIndex }};"></div>
+                                        <div class="border-b timeline-row {{ $isMidnight ? 'border-gray-400 bg-gray-50' : 'border-gray-100' }}" style="grid-column: 2 / span {{ $rinkCount }}; grid-row: {{ $rowIndex }};"></div>
                                     @endforeach
 
                                     @foreach ($timeline as $rinkName => $events)

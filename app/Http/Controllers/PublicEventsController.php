@@ -114,6 +114,8 @@ class PublicEventsController extends Controller
             }
         }
 
+            $rinks = $this->applyOvernightGapRule($rinks, $windowStart, $now);
+
         $liveEvents = [];
         foreach ($rinks as $rinkName => $rinkEvents) {
             $liveEvent = collect($rinkEvents)->first(function ($event) use ($now) {
@@ -505,5 +507,77 @@ class PublicEventsController extends Controller
         }
 
         return [];
+    }
+
+    private function applyOvernightGapRule(array $rinks, Carbon $windowStart, Carbon $now): array
+    {
+        $timezone = config('app.timezone');
+        $dayStart = $windowStart->copy()->timezone($timezone)->startOfDay();
+        $midnightBoundary = $dayStart->copy()->addDay();
+
+        foreach ($rinks as $rinkName => $rinkEvents) {
+            if (count($rinkEvents) < 2) {
+                continue;
+            }
+
+            $sorted = collect($rinkEvents)->sortBy('start')->values();
+            $lastBefore = $sorted->filter(function ($event) use ($midnightBoundary, $timezone) {
+                return $event['start']->copy()->timezone($timezone)->lt($midnightBoundary);
+            })->last();
+            $firstAfter = $sorted->first(function ($event) use ($midnightBoundary, $timezone) {
+                return $event['start']->copy()->timezone($timezone)->gte($midnightBoundary);
+            });
+
+            if (!$lastBefore || !$firstAfter) {
+                continue;
+            }
+
+            $gapHours = $lastBefore['end']->diffInMinutes($firstAfter['start']) / 60;
+
+            if ($gapHours <= 2) {
+                continue;
+            }
+
+            $filtered = $sorted->filter(function ($event) use ($midnightBoundary, $timezone) {
+                return $event['start']->copy()->timezone($timezone)->lt($midnightBoundary);
+            })->values()->all();
+
+            $hasCloseRink = collect($filtered)->contains(function ($event) {
+                return !empty($event['is_close_rink']);
+            });
+
+            $lastTakedownIndex = null;
+            foreach ($filtered as $index => $event) {
+                $title = strtolower($event['title'] ?? '');
+                if (str_contains($title, 'takedown')) {
+                    $lastTakedownIndex = $index;
+                }
+            }
+
+            if (!$hasCloseRink && $lastTakedownIndex !== null) {
+                $filtered[$lastTakedownIndex]['is_close_rink'] = true;
+            } elseif (!$hasCloseRink && !empty($filtered)) {
+                $lastEvent = $filtered[array_key_last($filtered)];
+                $closeStart = $lastEvent['end']->copy();
+                $closeEnd = $closeStart->copy()->addMinutes(15);
+                $closeStatus = $now->betweenIncluded($closeStart, $closeEnd)
+                    ? 'Live'
+                    : ($closeStart->greaterThan($now) ? 'Upcoming' : 'Ended');
+
+                $filtered[] = [
+                    'id' => null,
+                    'resource_id' => $lastEvent['resource_id'] ?? null,
+                    'title' => 'Close Rink',
+                    'start' => $closeStart,
+                    'end' => $closeEnd,
+                    'status' => $closeStatus,
+                    'is_close_rink' => true,
+                ];
+            }
+
+            $rinks[$rinkName] = $filtered;
+        }
+
+        return $rinks;
     }
 }
