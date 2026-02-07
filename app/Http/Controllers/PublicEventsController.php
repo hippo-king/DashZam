@@ -12,8 +12,9 @@ class PublicEventsController extends Controller
     public function index(Request $request)
     {
         $now = now();
-        $windowStart = now();
-        $windowEnd = now()->addDay();
+        $timezone = config('app.timezone');
+        $windowStart = $now->copy()->timezone($timezone)->startOfDay();
+        $windowEnd = $windowStart->copy()->addDay();
 
         $useMock = filter_var(env('EVENTS_USE_MOCK', false), FILTER_VALIDATE_BOOLEAN);
 
@@ -51,8 +52,11 @@ class PublicEventsController extends Controller
                 'status' => $status,
                 'is_close_rink' => false,
             ];
-        })->filter()->filter(function ($event) use ($windowStart, $windowEnd) {
-            return $event['end']->greaterThanOrEqualTo($windowStart) && $event['start']->lessThanOrEqualTo($windowEnd);
+        })->filter()->filter(function ($event) use ($windowStart, $windowEnd, $now) {
+            // Keep events that overlap the configured day window and have not already ended.
+            return $event['end']->greaterThanOrEqualTo($windowStart)
+                && $event['start']->lessThanOrEqualTo($windowEnd)
+                && $event['end']->greaterThanOrEqualTo($now);
         })->sortBy(function ($event) use ($now) {
             $isLive = $now->betweenIncluded($event['start'], $event['end']);
 
@@ -114,7 +118,7 @@ class PublicEventsController extends Controller
             }
         }
 
-            $rinks = $this->applyOvernightGapRule($rinks, $windowStart, $now);
+        $rinks = $this->applyOvernightGapRule($rinks, $windowStart, $now);
 
         $liveEvents = [];
         foreach ($rinks as $rinkName => $rinkEvents) {
