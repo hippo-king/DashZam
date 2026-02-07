@@ -12,6 +12,12 @@
                     <a href="{{ route('events.timeline') }}" class="text-sm font-medium text-gray-700 hover:text-gray-900">
                         {{ __('Driver Timeline') }}
                     </a>
+                    <form action="{{ route('events.fetch') }}" method="POST" class="inline">
+                        @csrf
+                        <button type="submit" class="text-sm font-medium text-gray-700 hover:text-gray-900">
+                            {{ __('Fetch API') }}
+                        </button>
+                    </form>
                     @auth
                         <a href="{{ route('dashboard') }}" class="text-sm font-semibold text-gray-700 hover:text-gray-900">
                             {{ Auth::user()->name }}
