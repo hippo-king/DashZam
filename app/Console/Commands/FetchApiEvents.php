@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class FetchApiEvents extends Command
 {
@@ -27,6 +28,10 @@ class FetchApiEvents extends Command
     {
         $users = User::query()->whereNotNull('api_base_url')->get();
 
+        $appClientId = env('DASH_API_ID');
+        $appClientSecret = env('DASH_API_SECRET');
+        $appBaseUrl = env('DASH_API_BASE_URL');
+
         foreach ($users as $user) {
             $this->info('Fetching for user: ' . $user->id);
 
@@ -35,11 +40,54 @@ class FetchApiEvents extends Command
                 continue;
             }
 
-            // Ensure token if credentials are present
+            // Determine token to use: user-level token (preferred) or app-level env credentials
+            $token = null;
+
             if ($user->api_client_id && $user->api_client_secret) {
                 $tokenError = $this->ensureApiToken($user);
                 if ($tokenError) {
                     $this->error('  token error: ' . $tokenError);
+                    continue;
+                }
+
+                $token = $user->api_token;
+            } elseif ($appClientId && $appClientSecret) {
+                // Use application-level credentials from .env, cached via the configured cache driver.
+                $baseForAuth = $user->api_base_url ?: $appBaseUrl;
+                if (!$baseForAuth) {
+                    $this->warn('  no api_base_url available for env credentials, skipping');
+                    continue;
+                }
+
+                $cacheKey = 'dash:app_token';
+                $lockKey = 'dash:app_token_lock';
+
+                $token = Cache::get($cacheKey);
+
+                if (!$token) {
+                    $lock = Cache::lock($lockKey, 10);
+                    if ($lock->get()) {
+                        try {
+                            $fetched = $this->fetchToken($appClientId, $appClientSecret, $baseForAuth);
+                            if ($fetched && isset($fetched['access_token'])) {
+                                $tokenValue = $fetched['access_token'];
+                                $ttl = isset($fetched['expires_in']) && $fetched['expires_in'] ? (int) $fetched['expires_in'] : 3500;
+                                Cache::put($cacheKey, $tokenValue, $ttl);
+                                Cache::put($cacheKey . '_expires_at', now()->addSeconds($ttl)->toIso8601String(), $ttl);
+                                $token = $tokenValue;
+                            }
+                        } finally {
+                            $lock->release();
+                        }
+                    } else {
+                        // another process is fetching the token; wait briefly then read cache
+                        usleep(200000); // 200ms
+                        $token = Cache::get($cacheKey);
+                    }
+                }
+
+                if (!$token) {
+                    $this->error('  token error: failed to authenticate with env credentials');
                     continue;
                 }
             }
@@ -57,8 +105,8 @@ class FetchApiEvents extends Command
             $url .= '?' . $query;
 
             $client = Http::timeout(15)->accept('application/vnd.api+json');
-            if ($user->api_token) {
-                $client = $client->withToken($user->api_token);
+            if ($token) {
+                $client = $client->withToken($token);
             }
 
             try {
@@ -106,11 +154,32 @@ class FetchApiEvents extends Command
         if ($user->api_token && $user->api_token_expires_at && $user->api_token_expires_at->isFuture()) {
             return null;
         }
+        $fetched = $this->fetchToken($user->api_client_id, $user->api_client_secret, $user->api_base_url);
 
-        $authUrl = rtrim($user->api_base_url, '/') . '/auth/token';
+        if (!$fetched) {
+            return 'Failed to authenticate with user credentials';
+        }
+
+        $token = $fetched['access_token'] ?? null;
+        $expiresIn = isset($fetched['expires_in']) ? (int) $fetched['expires_in'] : null;
+
+        if (!$token) {
+            return 'Authentication failed: access_token missing';
+        }
+
+        $user->api_token = $token;
+        $user->api_token_expires_at = $expiresIn ? now()->addSeconds($expiresIn) : now()->addDay();
+        $user->save();
+
+        return null;
+    }
+
+    private function fetchToken(string $clientId, string $clientSecret, string $baseUrl): ?array
+    {
+        $authUrl = rtrim($baseUrl, '/') . '/auth/token';
         $payload = [
-            'client_id' => $user->api_client_id,
-            'client_secret' => $user->api_client_secret,
+            'client_id' => $clientId,
+            'client_secret' => $clientSecret,
             'grant_type' => 'client_credentials',
         ];
 
@@ -120,25 +189,24 @@ class FetchApiEvents extends Command
                 ->asForm()
                 ->post($authUrl, $payload);
         } catch (\Throwable $exception) {
-            return 'Failed to authenticate: ' . $exception->getMessage();
+            return null;
         }
 
         if (!$response->ok()) {
-            $message = $response->json('message') ?? $response->body();
-            return 'Authentication failed: ' . $message;
+            return null;
         }
 
         $token = $response->json('access_token');
+        $expiresIn = $response->json('expires_in');
 
         if (!$token) {
-            return 'Authentication failed: access_token missing';
+            return null;
         }
 
-        $user->api_token = $token;
-        $user->api_token_expires_at = now()->addDay();
-        $user->save();
-
-        return null;
+        return [
+            'access_token' => $token,
+            'expires_in' => $expiresIn ? (int) $expiresIn : null,
+        ];
     }
 
     private function dataIsEventList(array $data): bool
