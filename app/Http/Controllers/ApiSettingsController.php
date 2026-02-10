@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Cache;
 
 class ApiSettingsController extends Controller
 {
@@ -52,6 +53,17 @@ class ApiSettingsController extends Controller
 
     public function fetch(Request $request)
     {
+        // Prevent rapid/parallel manual fetches from spamming the remote API.
+        // Acquire a short lock; if unavailable, return 429 with Retry-After.
+        $lockKey = 'dash:manual_fetch_lock';
+        $lockTtl = 30; // seconds - server-side cooldown
+        $lock = Cache::lock($lockKey, $lockTtl);
+        if (! $lock->get()) {
+            return back()->withErrors([
+                'api_base_url' => 'Another fetch is in progress. Please try again later.',
+            ])->setStatusCode(429)->header('Retry-After', (string) $lockTtl);
+        }
+
         $user = $request->user();
 
         if (!$user->api_base_url) {
@@ -90,9 +102,10 @@ class ApiSettingsController extends Controller
             /** @var Response $response */
             $response = $client->get($url);
         } catch (\Throwable $exception) {
+            $lock->release();
             return back()->withErrors([
                 'api_base_url' => 'Failed to reach the API: ' . $exception->getMessage(),
-            ]);
+            ])->setStatusCode(502);
         }
 
         $body = $response->json();
@@ -115,6 +128,8 @@ class ApiSettingsController extends Controller
         $user->api_last_payload = $payload;
         $user->api_last_fetched_at = now();
         $user->save();
+        // release the manual fetch lock
+        $lock->release();
 
         return back()->with('status', 'API response fetched.');
     }

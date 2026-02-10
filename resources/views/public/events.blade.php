@@ -12,9 +12,9 @@
                     <a href="{{ route('events.timeline') }}" class="text-sm font-medium text-gray-700 hover:text-gray-900">
                         {{ __('Driver Timeline') }}
                     </a>
-                    <form action="{{ route('events.fetch') }}" method="POST" class="inline">
+                    <form id="public-fetch-form" action="{{ route('events.fetch') }}" method="POST" class="inline">
                         @csrf
-                        <button type="submit" class="text-sm font-medium text-gray-700 hover:text-gray-900">
+                        <button id="public-fetch-btn" type="submit" class="text-sm font-medium text-gray-700 hover:text-gray-900">
                             {{ __('Fetch API') }}
                         </button>
                     </form>
@@ -33,6 +33,110 @@
                 </div>
             </div>
         </nav>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function(){
+                        try{
+                            // Discrete toast implementation for guest pages. Mirrors
+                            // the `showAjaxToast` used in API settings so notifications
+                            // look the same for authenticated and public views.
+                            function showAjaxToast(type, message){
+                                try{
+                                    console.log('[ajax toast]', type, message);
+                                    let container = document.getElementById('ajax-toast-container');
+                                    if (!container) {
+                                        container = document.createElement('div');
+                                        container.id = 'ajax-toast-container';
+                                        container.setAttribute('aria-live','polite');
+                                        container.className = 'fixed inset-0 flex items-end px-4 py-6 pointer-events-none sm:items-start sm:p-6';
+                                        container.innerHTML = '<div class="w-full flex flex-col items-center space-y-4 sm:items-end" id="ajax-toast-list"></div>';
+                                        document.body.appendChild(container);
+                                    }
+                                    const list = document.getElementById('ajax-toast-list');
+                                    const toast = document.createElement('div');
+                                    toast.className = 'max-w-sm w-full bg-white shadow-lg rounded-lg pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden';
+                                    toast.innerHTML = `<div class="p-4"><div class="flex items-start"><div class="flex-shrink-0">${type==='success'? '<svg class="h-6 w-6 text-green-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" /></svg>' : '<svg class="h-6 w-6 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>'}</div><div class="ml-3 w-0 flex-1 pt-0.5"><p class="text-sm font-medium text-gray-900">${type==='success' ? 'Success' : 'Error'}</p><p class="mt-1 text-sm text-gray-500">${message}</p></div></div></div>`;
+                                    list.appendChild(toast);
+                                    setTimeout(()=>{ toast.remove(); }, 5000);
+                                }catch(e){
+                                    try{ console.log('[ajax toast fallback]', type, message, e); }catch(_){ }
+                                    try{ alert((type==='success'? 'Success: ' : 'Error: ') + message); }catch(_){ }
+                                }
+                            }
+
+                            const form = document.getElementById('public-fetch-form');
+                            if (!form) return;
+                            const btn = document.getElementById('public-fetch-btn');
+
+                            form.addEventListener('submit', async function(e){
+                                e.preventDefault();
+                                const now = Date.now();
+                                const cooldown = window.dashFetchCooldown || 0;
+                                if (now < cooldown) {
+                                    const wait = Math.ceil((cooldown - now) / 1000);
+                                    if (typeof showAjaxToast === 'function') showAjaxToast('error', `Please wait ${wait}s before fetching again.`);
+                                    else if (typeof showNavToast === 'function') showNavToast('error', `Please wait ${wait}s before fetching again.`);
+                                    else alert(`Please wait ${wait}s before fetching again.`);
+                                    return;
+                                }
+
+                                try{
+                                    if (btn) btn.disabled = true;
+                                    const token = form.querySelector('input[name="_token"]').value;
+                                    const resp = await fetch(form.action, {
+                                        method: 'POST',
+                                        headers: {
+                                            'X-CSRF-TOKEN': token,
+                                            'X-Requested-With': 'XMLHttpRequest'
+                                        },
+                                        credentials: 'same-origin'
+                                    });
+
+                                    if (!resp.ok) {
+                                        if (resp.status === 429) {
+                                            const retry = resp.headers.get('Retry-After');
+                                            let waitSec = 30;
+                                            if (retry) {
+                                                const asInt = parseInt(retry, 10);
+                                                if (!Number.isNaN(asInt)) waitSec = asInt;
+                                                else {
+                                                    const date = Date.parse(retry);
+                                                    if (!Number.isNaN(date)) waitSec = Math.max(1, Math.ceil((date - Date.now())/1000));
+                                                }
+                                            }
+                                            window.dashFetchCooldown = Date.now() + (waitSec * 1000);
+                                            if (typeof showAjaxToast === 'function') showAjaxToast('error', `Too many requests — retry in ${waitSec}s.`);
+                                            else if (typeof showNavToast === 'function') showNavToast('error', `Too many requests — retry in ${waitSec}s.`);
+                                            else alert(`Too many requests — retry in ${waitSec}s.`);
+                                            return;
+                                        }
+
+                                        const text = await resp.text().catch(()=>null);
+                                        throw new Error(text || resp.statusText || 'Fetch failed');
+                                    }
+
+                                    // success: set short cooldown, show toast, and reload after
+                                    // the toast has faded so the UX feels smooth.
+                                    window.dashFetchCooldown = Date.now() + (30 * 1000);
+                                    if (typeof showAjaxToast === 'function') showAjaxToast('success', 'API response fetched.');
+                                    else if (typeof showNavToast === 'function') showNavToast('success', 'API response fetched.');
+                                    else alert('Success: API response fetched.');
+                                    // Wait for the 5s toast duration + small buffer before reload
+                                    setTimeout(()=> location.reload(), 5200);
+                                }catch(err){
+                                    const msg = err?.message || 'Failed to fetch API.';
+                                    if (typeof showAjaxToast === 'function') showAjaxToast('error', msg);
+                                    else if (typeof showNavToast === 'function') showNavToast('error', msg);
+                                    else alert('Error: ' + msg);
+                                    window.dashFetchCooldown = Date.now() + (10 * 1000);
+                                }finally{
+                                    if (btn) btn.disabled = false;
+                                }
+                            });
+                        }catch(e){
+                            console.log('public fetch attach error', e);
+                        }
+                    });
+                </script>
         <div x-show="!navOpen" class="border-b border-gray-200 bg-white">
             <div class="mx-auto flex max-w-6xl items-center justify-end px-4 py-2 sm:px-6 lg:px-8">
                 <button type="button" class="text-xs font-semibold text-gray-500 hover:text-gray-700" @click="navOpen = true; localStorage.setItem('navOpen', '1')">

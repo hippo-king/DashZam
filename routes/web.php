@@ -17,11 +17,8 @@ Route::get('/events', [PublicEventsController::class, 'index'])->name('events.in
 Route::get('/driver/timeline', [PublicEventsController::class, 'timeline'])->name('events.timeline');
 
 // Public trigger to fetch API payloads (runs the scheduled fetch command).
-use Illuminate\Support\Facades\Artisan;
-Route::post('/events/fetch', function () {
-    Artisan::call('events:fetch');
-    return back()->with('status', 'API fetch requested.');
-})->name('events.fetch')->middleware('throttle:3,30');
+use App\Http\Controllers\PublicFetchController;
+Route::post('/events/fetch', [PublicFetchController::class, 'fetch'])->name('events.fetch');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

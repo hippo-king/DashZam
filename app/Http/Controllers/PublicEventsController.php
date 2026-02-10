@@ -707,15 +707,6 @@ class PublicEventsController extends Controller
         $newBase = $base;
 
         return [
-            // [
-            //     'id' => 'mock-r1-live',
-            //     'attributes' => [
-            //         'resource_id' => 1,
-            //         'desc' => 'Public Skating',
-            //         'start' => $base->copy()->subMinutes(15)->toIso8601String(),
-            //         'end' => $base->copy()->addMinutes(60)->toIso8601String(),
-            //     ],
-            // ],
             [
                 'id' => 'mock-r1-live',
                 'attributes' => [
