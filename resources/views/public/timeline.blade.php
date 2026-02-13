@@ -155,8 +155,9 @@
             }
 
             @page {
-                size: landscape;
-                margin: 0;
+                /* Prefer portrait for printable copy; fallback to portrait sizing */
+                size: A4 portrait;
+                margin: 0.5in;
             }
 
             .print-scale-64 {
@@ -165,24 +166,31 @@
                 width: 156.25%;
             }
 
+
+            /* Make the timeline rows taller for readability on paper */
             .timeline-grid {
-                grid-template-rows: repeat(auto-fill, minmax(10px, 1fr)) !important;
+                grid-template-rows: repeat(auto-fill, minmax(20px, 1fr)) !important;
             }
 
             .timeline-time {
-                font-size: 9px !important;
-                padding-right: 4px !important;
+                font-size: 11px !important;
+                padding-right: 6px !important;
             }
 
             .timeline-row {
                 border-bottom-color: #e5e7eb !important;
             }
 
+            /* Larger, more readable event blocks for printing */
+            body, .timeline-event, .timeline-time {
+                font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            }
+
             .timeline-event {
-                font-size: 8px !important;
-                line-height: 1.1 !important;
-                padding: 2px 3px !important;
-                margin: 1px 4px !important;
+                font-size: 12px !important;
+                line-height: 1.25 !important;
+                padding: 6px 8px !important;
+                margin: 4px 6px !important;
             }
         }
     </style>
