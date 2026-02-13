@@ -7,15 +7,15 @@
                 </div>
                 <div class="flex items-center gap-4">
                     <a href="{{ route('events.index') }}" class="text-sm font-medium text-gray-700 hover:text-gray-900">
-                        {{ __('24-Hour View') }}
+                        {{ __('Live View') }}
                     </a>
-                    <a href="{{ route('events.timeline') }}" class="text-sm font-medium text-gray-700 hover:text-gray-900">
-                        {{ __('Driver Timeline') }}
+                    <a href="{{ route('events.timeline') }}" target="_blank" rel="noopener noreferrer" class="text-sm font-medium text-gray-700 hover:text-gray-900">
+                        {{ __('Printable Copy') }}
                     </a>
                     <form id="public-fetch-form" action="{{ route('events.fetch') }}" method="POST" class="inline">
                         @csrf
                         <button id="public-fetch-btn" type="submit" class="text-sm font-medium text-gray-700 hover:text-gray-900">
-                            {{ __('Fetch API') }}
+                            {{ __('Fetch Data') }}
                         </button>
                     </form>
                     @auth
@@ -178,7 +178,7 @@
                     <div class="mt-6">
                         @if (!$hasData)
                             <div class="rounded-lg border border-gray-200 bg-white p-6 text-sm text-gray-600 shadow-sm">
-                                {{ __('No events are available yet. This list will show ongoing and upcoming events within the next 24 hours.') }}
+                                {{ __('No more events today, this schedule will refresh at midnight.') }}
                             </div>
                         @else
                             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:hidden">
@@ -417,7 +417,7 @@
                                         <div class="h-[65vh] overflow-auto p-4">
                                             @if (empty($events))
                                                 <p class="text-sm text-gray-600">
-                                                    {{ __('No events scheduled in this window.') }}
+                                                    {{ __('No more events today, this schedule will refresh at midnight.') }}
                                                 </p>
                                             @else
                                                 <div class="space-y-4">
