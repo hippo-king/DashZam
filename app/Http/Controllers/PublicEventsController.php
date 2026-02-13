@@ -6,11 +6,15 @@ use App\Models\User;
 use App\Support\LockerRoomParser;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 
 class PublicEventsController extends Controller
 {
     public function index(Request $request)
     {
+        $this->maybeTriggerFetch();
+
         $now = now();
         $timezone = config('app.timezone');
         $windowStart = $now->copy()->timezone($timezone)->startOfDay();
@@ -163,6 +167,8 @@ class PublicEventsController extends Controller
 
     public function timeline(Request $request)
     {
+        $this->maybeTriggerFetch();
+
         $now = now();
         $timezone = config('app.timezone');
         $dayStart = $now->copy()->timezone($timezone)->startOfDay();
@@ -878,5 +884,47 @@ class PublicEventsController extends Controller
         }
 
         return $rinks;
+    }
+
+    /**
+     * Trigger a background fetch when there is no recent payload.
+     * Uses a cache lock to avoid parallel fetches.
+     */
+    private function maybeTriggerFetch(int $staleMinutes = 10): void
+    {
+        try {
+            $latest = User::query()
+                ->whereNotNull('api_last_payload')
+                ->orderByDesc('api_last_fetched_at')
+                ->first();
+
+            $shouldFetch = false;
+
+            if (!$latest) {
+                $shouldFetch = true;
+            } else {
+                $fetchedAt = $latest->api_last_fetched_at;
+                if (!$fetchedAt || $fetchedAt->lt(now()->subMinutes($staleMinutes))) {
+                    $shouldFetch = true;
+                }
+            }
+
+            if (!$shouldFetch) {
+                return;
+            }
+
+            $lock = Cache::lock('dash:manual_fetch_lock', 30);
+            if (!$lock->get()) {
+                return;
+            }
+
+            try {
+                Artisan::call('events:fetch');
+            } finally {
+                $lock->release();
+            }
+        } catch (\Throwable $e) {
+            // Do not break the public view on fetch errors; just fail silently.
+        }
     }
 }
