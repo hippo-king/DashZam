@@ -18,14 +18,14 @@
                     <x-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')">
                         {{ __('Events') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('events.timeline')" :active="request()->routeIs('events.timeline')">
-                        {{ __('Driver Timeline') }}
+                    <x-nav-link :href="route('events.timeline')" :active="request()->routeIs('events.timeline')" target="_blank" rel="noopener noreferrer">
+                        {{ __('Printable Copy') }}
                     </x-nav-link>
                     <div class="flex items-center space-x-2">
                         <x-nav-link :href="route('api-settings.edit')" :active="request()->routeIs('api-settings.*')">
                             {{ __('API Settings') }}
                         </x-nav-link>
-                        <button type="button" onclick="ajaxFetchApi(this)" title="Fetch API now" class="inline-flex items-center px-2 py-1 border border-transparent rounded text-sm text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-700 focus:outline-none">
+                        <button type="button" onclick="ajaxFetchApi(this)" title="Fetch Data now" class="inline-flex items-center px-2 py-1 border border-transparent rounded text-sm text-gray-500 bg-white hover:bg-gray-50 hover:text-gray-700 focus:outline-none">
                             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                             </svg>
@@ -82,15 +82,15 @@
 
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
-        <div class="pt-2 pb-3 space-y-1">
+            <div class="pt-2 pb-3 space-y-1">
             <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
                 {{ __('Dashboard') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('events.index')" :active="request()->routeIs('events.index')">
                 {{ __('Events') }}
             </x-responsive-nav-link>
-            <x-responsive-nav-link :href="route('events.timeline')" :active="request()->routeIs('events.timeline')">
-                {{ __('Driver Timeline') }}
+            <x-responsive-nav-link :href="route('events.timeline')" :active="request()->routeIs('events.timeline')" target="_blank" rel="noopener noreferrer">
+                {{ __('Printable Copy') }}
             </x-responsive-nav-link>
             <x-responsive-nav-link :href="route('api-settings.edit')" :active="request()->routeIs('api-settings.*')">
                 {{ __('API Settings') }}

@@ -1,7 +1,7 @@
 <x-guest-layout>
     <div x-data="{ navOpen: true }" x-init="navOpen = localStorage.getItem('navOpen') !== '0'" class="sticky top-0 z-10 bg-white/90 backdrop-blur">
         <nav x-show="navOpen" class="border-b border-gray-200 bg-white">
-            <div class="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
+            <div class="mx-auto flex max-w-screen-2xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
                 <div class="text-xl font-semibold text-gray-100">
                     {{ __('Events') }}
                 </div>
@@ -138,7 +138,7 @@
                     });
                 </script>
         <div x-show="!navOpen" class="border-b border-gray-200 bg-white">
-            <div class="mx-auto flex max-w-6xl items-center justify-end px-4 py-2 sm:px-6 lg:px-8">
+            <div class="mx-auto flex max-w-screen-2xl items-center justify-end px-4 py-2 sm:px-6 lg:px-8">
                 <button type="button" class="text-xs font-semibold text-gray-500 hover:text-gray-700" @click="navOpen = true; localStorage.setItem('navOpen', '1')">
                     {{ __('Show navigation') }}
                 </button>

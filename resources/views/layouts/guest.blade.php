@@ -16,7 +16,7 @@
     </head>
     <body class="theme-dark font-sans text-gray-900 antialiased bg-gray-100">
         <div class="min-h-screen bg-gray-100">
-            @if (request()->routeIs('events.index') || request()->routeIs('events.timeline'))
+            @if (request()->routeIs('events.index') || request()->routeIs('events.timeline') || request()->routeIs('home'))
                 {{ $slot }}
             @else
                 <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0">

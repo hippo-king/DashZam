@@ -31,9 +31,10 @@
                     </a>
                     <a
                         href="{{ route('events.timeline') }}"
+                        target="_blank" rel="noopener noreferrer"
                         class="inline-block px-5 py-1.5 text-[#1b1b18] border border-transparent hover:border-[#19140035] rounded-sm text-sm leading-normal"
                     >
-                        Driver Timeline
+                        Printable Copy
                     </a>
                     @auth
                         <a

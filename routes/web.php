@@ -5,9 +5,7 @@ use App\Http\Controllers\PublicEventsController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+Route::get('/', [PublicEventsController::class, 'index'])->name('home');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
@@ -18,6 +16,7 @@ Route::get('/driver/timeline', [PublicEventsController::class, 'timeline'])->nam
 
 // Public trigger to fetch API payloads (runs the scheduled fetch command).
 use App\Http\Controllers\PublicFetchController;
+
 Route::post('/events/fetch', [PublicFetchController::class, 'fetch'])->name('events.fetch');
 
 Route::middleware('auth')->group(function () {
