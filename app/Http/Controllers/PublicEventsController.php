@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use App\Support\LockerRoomParser;
+use App\Support\OrganizationLogoMapper;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
@@ -47,14 +48,20 @@ class PublicEventsController extends Controller
 
             $status = $now->betweenIncluded($start, $end) ? 'Live' : ($start->greaterThan($now) ? 'Upcoming' : 'Ended');
 
+            $title = $attrs['desc'] ?? $attrs['title'] ?? 'Event';
+            $customer = $attrs['customer'] ?? $attrs['customer_name'] ?? null;
+
             return [
                 'id' => $item['id'] ?? null,
                 'resource_id' => $attrs['resource_id'] ?? null,
-                'title' => $attrs['desc'] ?? $attrs['title'] ?? 'Event',
+                'title' => $title,
+                'customer' => $customer,
                 'start' => $start,
                 'end' => $end,
                 'status' => $status,
                 'is_close_rink' => false,
+                'logo' => OrganizationLogoMapper::getLogoPath($customer, $title),
+                'organization' => OrganizationLogoMapper::getOrganizationName($customer, $title),
             ];
         })->filter()->filter(function ($event) use ($windowStart, $windowEnd, $now) {
             // Keep events that overlap the configured day window and have not already ended.
@@ -200,14 +207,20 @@ class PublicEventsController extends Controller
 
             $status = $now->betweenIncluded($start, $end) ? 'Live' : ($start->greaterThan($now) ? 'Upcoming' : 'Ended');
 
+            $title = $attrs['desc'] ?? $attrs['title'] ?? 'Event';
+            $customer = $attrs['customer'] ?? $attrs['customer_name'] ?? null;
+
             return [
                 'id' => $item['id'] ?? null,
                 'resource_id' => $attrs['resource_id'] ?? null,
-                'title' => $attrs['desc'] ?? $attrs['title'] ?? 'Event',
+                'title' => $title,
+                'customer' => $customer,
                 'start' => $start,
                 'end' => $end,
                 'status' => $status,
                 'is_close_rink' => false,
+                'logo' => OrganizationLogoMapper::getLogoPath($customer, $title),
+                'organization' => OrganizationLogoMapper::getOrganizationName($customer, $title),
             ];
         })->filter()->filter(function ($event) use ($dayStart, $dayEnd, $timezone) {
             $start = $event['start']->copy()->timezone($timezone);
@@ -717,9 +730,10 @@ class PublicEventsController extends Controller
                 'id' => 'mock-r1-live',
                 'attributes' => [
                     'resource_id' => 1,
+                    'customer' => 'Spokane Braves',
                     'desc' => 'Spokane Braves (BR) vs Williams Lake (CH)',
                     'start' => $base->copy()->subMinutes(15)->toIso8601String(),
-                    'end' => $newBase = $base->copy()->addMinutes(150),
+                    'end' => ($newBase = $base->copy()->addMinutes(150))->toIso8601String(),
                 ],
             ],
             [
@@ -735,9 +749,10 @@ class PublicEventsController extends Controller
                 'id' => 'mock-r1-next',
                 'attributes' => [
                     'resource_id' => 1,
+                    'customer' => 'SAYHA',
                     'desc' => 'Jr. Chiefs Practice (CH, 1)',
                     'start' => $newBase->copy()->addMinutes(15)->toIso8601String(),
-                    'end' => $newBase = $newBase->copy()->addMinutes(60),
+                    'end' => ($newBase = $newBase->copy()->addMinutes(60))->toIso8601String(),
                 ],
             ],
             [
@@ -753,9 +768,39 @@ class PublicEventsController extends Controller
                 'id' => 'mock-r2-live',
                 'attributes' => [
                     'resource_id' => 6,
+                    'customer' => 'Eagles Ice Arena',
                     'desc' => 'Open Hockey (5, 7)',
                     'start' => $base->copy()->subMinutes(15)->toIso8601String(),
                     'end' => $base->copy()->addMinutes(60)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r2-first',
+                'attributes' => [
+                    'resource_id' => 6,
+                    'customer' => 'Jets',
+                    'desc' => 'Jets Hockey (5, 7)',
+                    'start' => $base->copy()->subMinutes(75)->toIso8601String(),
+                    'end' => $base->copy()->addMinutes(90)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r2-takedown0',
+                'attributes' => [
+                    'resource_id' => 6,
+                    'desc' => 'Takedown',
+                    'start' => $base->copy()->minutes(90)->toIso8601String(),
+                    'end' => $base->copy()->minutes(105)->toIso8601String(),
+                ],
+            ],
+            [
+                'id' => 'mock-r2-second',
+                'attributes' => [
+                    'resource_id' => 6,
+                    'customer' => 'LCFSC',
+                    'desc' => 'Figure Skate Club',
+                    'start' => $base->copy()->subMinutes(75)->toIso8601String(),
+                    'end' => $base->copy()->addMinutes(90)->toIso8601String(),
                 ],
             ],
             [
@@ -771,6 +816,7 @@ class PublicEventsController extends Controller
                 'id' => 'mock-r2-next',
                 'attributes' => [
                     'resource_id' => 6,
+                    'customer' => 'SAYHA',
                     'desc' => 'Jr. Chiefs Practice (6, 8)',
                     'start' => $base->copy()->addMinutes(75)->toIso8601String(),
                     'end' => $base->copy()->addMinutes(135)->toIso8601String(),

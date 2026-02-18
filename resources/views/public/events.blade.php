@@ -244,6 +244,9 @@
                                                         <span class="live-pulse" aria-hidden="true"></span>
                                                         {{ $rinkName }} · {{ __('Live') }}
                                                     </span>
+                                                    @if (!empty($liveEvent['logo']))
+                                                        <img src="{{ $liveEvent['logo'] }}" alt="Logo" class="h-10 w-10 object-contain bg-white rounded-md border border-gray-200 p-1">
+                                                    @endif
                                                     <h2 class="text-xl font-semibold text-gray-100 text-center flex-1 liveTitle">
                                                         {{ $liveTitle }}
                                                         @if (!empty($liveEvent['is_mock']))
@@ -364,6 +367,9 @@
                                                             <span class="live-pulse" aria-hidden="true"></span>
                                                             {{ __('Live') }}
                                                         </span>
+                                                        @if (!empty($liveEvent['logo']))
+                                                            <img src="{{ $liveEvent['logo'] }}" alt="Logo" class="h-10 w-10 object-contain bg-white rounded-md border border-gray-200 p-1">
+                                                        @endif
                                                         <h2 class="text-xl font-semibold text-gray-100 liveTitle text-center flex-1">
                                                             {{ $liveTitle }}
                                                             @if (!empty($liveEvent['is_mock']))
@@ -487,6 +493,9 @@
                                                         @endphp
                                                             <div class="rounded-lg p-4 shadow-sm {{ $isCloseRink ? 'bg-amber-100/80 border border-amber-300 ring-2 ring-amber-300/70' : ($isResurface ? 'bg-amber-50/80 border border-amber-200 ring-1 ring-amber-200/70' : 'bg-gray-50') }}">
                                                             <div class="flex items-center justify-between gap-3">
+                                                                @if (!empty($event['logo']) && !$isResurface && !$isCloseRink)
+                                                                    <img src="{{ $event['logo'] }}" alt="Logo" class="h-12 w-12 flex-shrink-0 object-contain bg-white rounded-md border border-gray-200 p-1.5">
+                                                                @endif
                                                                 <div class="min-w-0 flex-1">
                                                                     <h2 class="text-base font-semibold {{ $isAlert ? 'text-amber-900' : 'text-gray-900' }}">
                                                                         {{ $displayTitle }}
