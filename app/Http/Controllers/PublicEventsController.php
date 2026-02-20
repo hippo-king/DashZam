@@ -726,111 +726,250 @@ class PublicEventsController extends Controller
         $newBase = $base;
 
         return [
-            [
-                'id' => 'mock-r1-live',
-                'attributes' => [
-                    'resource_id' => 1,
-                    'customer' => 'Spokane Braves',
-                    'desc' => 'Spokane Braves (BR) vs Williams Lake (CH)',
-                    'start' => $base->copy()->subMinutes(15)->toIso8601String(),
-                    'end' => ($newBase = $base->copy()->addMinutes(150))->toIso8601String(),
+            // [
+            //     'id' => 'mock-r1-live',
+            //     'attributes' => [
+            //         'resource_id' => 1,
+            //         'customer' => 'Spokane Braves',
+            //         'desc' => 'Spokane Braves (BR) vs Williams Lake (CH)',
+            //         'start' => $base->copy()->subMinutes(15)->toIso8601String(),
+            //         'end' => ($newBase = $base->copy()->addMinutes(150))->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r1-close',
+            //     'attributes' => [
+            //         'resource_id' => 1,
+            //         'desc' => 'Takedown',
+            //         'start' => $newBase->copy()->toIso8601String(),
+            //         'end' => $newBase->copy()->addMinutes(15)->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r1-next',
+            //     'attributes' => [
+            //         'resource_id' => 1,
+            //         'customer' => 'SAYHA',
+            //         'desc' => 'Jr. Chiefs Practice (CH, 1)',
+            //         'start' => $newBase->copy()->addMinutes(15)->toIso8601String(),
+            //         'end' => ($newBase = $newBase->copy()->addMinutes(60))->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r1-close',
+            //     'attributes' => [
+            //         'resource_id' => 1,
+            //         'desc' => 'Takedown',
+            //         'start' => $newBase->copy()->toIso8601String(),
+            //         'end' => $newBase->copy()->addMinutes(15)->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r2-live',
+            //     'attributes' => [
+            //         'resource_id' => 6,
+            //         'customer' => 'Eagles Ice Arena',
+            //         'desc' => 'Open Hockey (5, 7)',
+            //         'start' => $base->copy()->subMinutes(15)->toIso8601String(),
+            //         'end' => $base->copy()->addMinutes(60)->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r2-first',
+            //     'attributes' => [
+            //         'resource_id' => 6,
+            //         'customer' => 'Jets',
+            //         'desc' => 'Jets Hockey (5, 7)',
+            //         'start' => $base->copy()->subMinutes(75)->toIso8601String(),
+            //         'end' => $base->copy()->addMinutes(90)->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r2-takedown0',
+            //     'attributes' => [
+            //         'resource_id' => 6,
+            //         'desc' => 'Takedown',
+            //         'start' => $base->copy()->minutes(90)->toIso8601String(),
+            //         'end' => $base->copy()->minutes(105)->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r2-second',
+            //     'attributes' => [
+            //         'resource_id' => 6,
+            //         'customer' => 'LCFSC',
+            //         'desc' => 'Figure Skate Club',
+            //         'start' => $base->copy()->subMinutes(75)->toIso8601String(),
+            //         'end' => $base->copy()->addMinutes(90)->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r2-takedown1',
+            //     'attributes' => [
+            //         'resource_id' => 6,
+            //         'desc' => 'Takedown',
+            //         'start' => $base->copy()->addHours(1)->toIso8601String(),
+            //         'end' => $base->copy()->addHours(1)->addMinutes(15)->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r2-next',
+            //     'attributes' => [
+            //         'resource_id' => 6,
+            //         'customer' => 'SAYHA',
+            //         'desc' => 'Jr. Chiefs Practice (6, 8)',
+            //         'start' => $base->copy()->addMinutes(75)->toIso8601String(),
+            //         'end' => $base->copy()->addMinutes(135)->toIso8601String(),
+            //     ],
+            // ],
+            // [
+            //     'id' => 'mock-r2-takedown',
+            //     'attributes' => [
+            //         'resource_id' => 6,
+            //         'desc' => 'Takedown',
+            //         'start' => $base->copy()->addMinutes(135)->toIso8601String(),
+            //         'end' => $base->copy()->addMinutes(150)->toIso8601String(),
+            //     ],
+            // ],
+
+                //
+                // -------------------------
+                // RINK 1 (resource_id = 1)
+                // -------------------------
+                //
+
+                [
+                    'id' => 'mock-r1-live',
+                    'attributes' => [
+                        'resource_id' => 1,
+                        'customer' => 'Spokane Braves',
+                        'desc' => 'Spokane Braves (BR) vs Williams Lake (CH)',
+                        'start' => $base->copy()->toIso8601String(),
+                        'end' => ($r1_e1_end = $base->copy()->addMinutes(165))->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r1-close',
-                'attributes' => [
-                    'resource_id' => 1,
-                    'desc' => 'Takedown',
-                    'start' => $newBase->copy()->toIso8601String(),
-                    'end' => $newBase->copy()->addMinutes(15)->toIso8601String(),
+
+                [
+                    'id' => 'mock-r1-close',
+                    'attributes' => [
+                        'resource_id' => 1,
+                        'desc' => 'Takedown',
+                        'start' => $r1_e1_end->copy()->toIso8601String(),
+                        'end' => ($r1_t1_end = $r1_e1_end->copy()->addMinutes(15))->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r1-next',
-                'attributes' => [
-                    'resource_id' => 1,
-                    'customer' => 'SAYHA',
-                    'desc' => 'Jr. Chiefs Practice (CH, 1)',
-                    'start' => $newBase->copy()->addMinutes(15)->toIso8601String(),
-                    'end' => ($newBase = $newBase->copy()->addMinutes(60))->toIso8601String(),
+
+                [
+                    'id' => 'mock-r1-next',
+                    'attributes' => [
+                        'resource_id' => 1,
+                        'customer' => 'SAYHA',
+                        'desc' => 'Jr. Chiefs Practice (CH, 1)',
+                        'start' => $r1_t1_end->copy()->toIso8601String(),
+                        'end' => ($r1_e2_end = $r1_t1_end->copy()->addMinutes(60))->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r1-close',
-                'attributes' => [
-                    'resource_id' => 1,
-                    'desc' => 'Takedown',
-                    'start' => $newBase->copy()->toIso8601String(),
-                    'end' => $newBase->copy()->addMinutes(15)->toIso8601String(),
+
+                [
+                    'id' => 'mock-r1-close2',
+                    'attributes' => [
+                        'resource_id' => 1,
+                        'desc' => 'Takedown',
+                        'start' => $r1_e2_end->copy()->toIso8601String(),
+                        'end' => $r1_e2_end->copy()->addMinutes(15)->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r2-live',
-                'attributes' => [
-                    'resource_id' => 6,
-                    'customer' => 'Eagles Ice Arena',
-                    'desc' => 'Open Hockey (5, 7)',
-                    'start' => $base->copy()->subMinutes(15)->toIso8601String(),
-                    'end' => $base->copy()->addMinutes(60)->toIso8601String(),
+
+
+                //
+                // -------------------------
+                // RINK 2 (resource_id = 6)
+                // -------------------------
+                //
+
+                [
+                    'id' => 'mock-r2-first',
+                    'attributes' => [
+                        'resource_id' => 6,
+                        'customer' => 'Jets',
+                        'desc' => 'Jets Hockey (5, 7)',
+                        'start' => $base->copy()->toIso8601String(),
+                        'end' => ($r2_e1_end = $base->copy()->addMinutes(165))->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r2-first',
-                'attributes' => [
-                    'resource_id' => 6,
-                    'customer' => 'Jets',
-                    'desc' => 'Jets Hockey (5, 7)',
-                    'start' => $base->copy()->subMinutes(75)->toIso8601String(),
-                    'end' => $base->copy()->addMinutes(90)->toIso8601String(),
+
+                [
+                    'id' => 'mock-r2-takedown0',
+                    'attributes' => [
+                        'resource_id' => 6,
+                        'desc' => 'Takedown',
+                        'start' => $r2_e1_end->copy()->toIso8601String(),
+                        'end' => ($r2_t1_end = $r2_e1_end->copy()->addMinutes(15))->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r2-takedown0',
-                'attributes' => [
-                    'resource_id' => 6,
-                    'desc' => 'Takedown',
-                    'start' => $base->copy()->minutes(90)->toIso8601String(),
-                    'end' => $base->copy()->minutes(105)->toIso8601String(),
+
+                [
+                    'id' => 'mock-r2-live',
+                    'attributes' => [
+                        'resource_id' => 6,
+                        'customer' => 'Eagles Ice Arena',
+                        'desc' => 'Open Hockey (5, 7)',
+                        'start' => $r2_t1_end->copy()->toIso8601String(),
+                        'end' => ($r2_e2_end = $r2_t1_end->copy()->addMinutes(75))->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r2-second',
-                'attributes' => [
-                    'resource_id' => 6,
-                    'customer' => 'LCFSC',
-                    'desc' => 'Figure Skate Club',
-                    'start' => $base->copy()->subMinutes(75)->toIso8601String(),
-                    'end' => $base->copy()->addMinutes(90)->toIso8601String(),
+
+                [
+                    'id' => 'mock-r2-takedown1',
+                    'attributes' => [
+                        'resource_id' => 6,
+                        'desc' => 'Takedown',
+                        'start' => $r2_e2_end->copy()->toIso8601String(),
+                        'end' => ($r2_t2_end = $r2_e2_end->copy()->addMinutes(15))->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r2-takedown1',
-                'attributes' => [
-                    'resource_id' => 6,
-                    'desc' => 'Takedown',
-                    'start' => $base->copy()->addHours(1)->toIso8601String(),
-                    'end' => $base->copy()->addHours(1)->addMinutes(15)->toIso8601String(),
+
+                [
+                    'id' => 'mock-r2-second',
+                    'attributes' => [
+                        'resource_id' => 6,
+                        'customer' => 'LCFSC',
+                        'desc' => 'Figure Skate Club',
+                        'start' => $r2_t2_end->copy()->toIso8601String(),
+                        'end' => ($r2_e3_end = $r2_t2_end->copy()->addMinutes(165))->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r2-next',
-                'attributes' => [
-                    'resource_id' => 6,
-                    'customer' => 'SAYHA',
-                    'desc' => 'Jr. Chiefs Practice (6, 8)',
-                    'start' => $base->copy()->addMinutes(75)->toIso8601String(),
-                    'end' => $base->copy()->addMinutes(135)->toIso8601String(),
+
+                [
+                    'id' => 'mock-r2-takedown2',
+                    'attributes' => [
+                        'resource_id' => 6,
+                        'desc' => 'Takedown',
+                        'start' => $r2_e3_end->copy()->toIso8601String(),
+                        'end' => ($r2_t3_end = $r2_e3_end->copy()->addMinutes(15))->toIso8601String(),
+                    ],
                 ],
-            ],
-            [
-                'id' => 'mock-r2-takedown',
-                'attributes' => [
-                    'resource_id' => 6,
-                    'desc' => 'Takedown',
-                    'start' => $base->copy()->addMinutes(135)->toIso8601String(),
-                    'end' => $base->copy()->addMinutes(150)->toIso8601String(),
+
+                [
+                    'id' => 'mock-r2-next',
+                    'attributes' => [
+                        'resource_id' => 6,
+                        'customer' => 'SAYHA',
+                        'desc' => 'Jr. Chiefs Practice (6, 8)',
+                        'start' => $r2_t3_end->copy()->toIso8601String(),
+                        'end' => ($r2_e4_end = $r2_t3_end->copy()->addMinutes(60))->toIso8601String(),
+                    ],
                 ],
-            ],
+
+                [
+                    'id' => 'mock-r2-takedown3',
+                    'attributes' => [
+                        'resource_id' => 6,
+                        'desc' => 'Takedown',
+                        'start' => $r2_e4_end->copy()->toIso8601String(),
+                        'end' => $r2_e4_end->copy()->addMinutes(15)->toIso8601String(),
+                    ],
+                ],
         ];
     }
 
