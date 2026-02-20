@@ -72,6 +72,7 @@ Place logo image files in `public/images/logos/` with these exact filenames:
 The system extracts organization information from two sources (in priority order):
 
 1. **Customer field** (`attributes.customer` or `attributes.customer_name`) - Primary source
+   - If the event contains only a `customer_id`, the controller will try to resolve that id from `included`, `customers`, or `organizations` arrays in the payload. A fallback id→name map is configurable in `config/organization_logos.php`.
 2. **Event title** (`attributes.desc` or `attributes.title`) - Fallback if customer field doesn't match
 
 This ensures accurate logo display based on the actual event owner rather than just title keywords.

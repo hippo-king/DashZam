@@ -6,6 +6,7 @@ use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class EventsFeatureTest extends TestCase
 {
@@ -84,5 +85,240 @@ class EventsFeatureTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertSee('Close Rink');
+    }
+
+    public function test_age_group_title_with_sayha_customer_displays_logo()
+    {
+        config(['app.timezone' => 'America/Los_Angeles']);
+        Carbon::setTestNow(Carbon::parse('2026-02-06 12:00:00', 'America/Los_Angeles'));
+
+        $items = [
+            [
+                'id' => 'sayha-12u',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'customer' => 'SAYHA',
+                    'desc' => '12U',
+                    'start' => Carbon::parse('2026-02-06 13:00:00', 'America/Los_Angeles')->toIso8601String(),
+                    'end' => Carbon::parse('2026-02-06 14:00:00', 'America/Los_Angeles')->toIso8601String(),
+                ],
+            ],
+        ];
+
+        User::factory()->create([
+            'api_last_payload' => json_encode(['body' => $items]),
+            'api_last_fetched_at' => now(),
+        ]);
+
+        $response = $this->get('/events');
+
+        $response->assertStatus(200);
+        // Expect the SAYHA logo to appear (image source contains SAYHA_LOGO)
+        $response->assertSee('SAYHA_LOGO', false);
+    }
+
+    public function test_event_with_customer_id_and_included_customer_displays_logo()
+    {
+        config(['app.timezone' => 'America/Los_Angeles']);
+        Carbon::setTestNow(Carbon::parse('2026-02-06 12:00:00', 'America/Los_Angeles'));
+
+        $body = [
+            'data' => [
+                [
+                    'id' => 'ev-1',
+                    'attributes' => [
+                        'resource_id' => 1,
+                        'customer_id' => 3,
+                        'desc' => '12U',
+                        'start' => Carbon::parse('2026-02-06 13:00:00', 'America/Los_Angeles')->toIso8601String(),
+                        'end' => Carbon::parse('2026-02-06 14:00:00', 'America/Los_Angeles')->toIso8601String(),
+                    ],
+                ],
+            ],
+            'included' => [
+                [
+                    'type' => 'customer',
+                    'id' => 3,
+                    'attributes' => [
+                        'name' => 'SAYHA',
+                    ],
+                ],
+            ],
+        ];
+
+        User::factory()->create([
+            'api_last_payload' => json_encode(['body' => $body]),
+            'api_last_fetched_at' => now(),
+        ]);
+
+        $response = $this->get('/events');
+
+        $response->assertStatus(200);
+        $response->assertSee('SAYHA_LOGO', false);
+    }
+
+    public function test_event_with_customer_id_and_customers_array_displays_logo()
+    {
+        config(['app.timezone' => 'America/Los_Angeles']);
+        Carbon::setTestNow(Carbon::parse('2026-02-06 12:00:00', 'America/Los_Angeles'));
+
+        $body = [
+            'items' => [
+                [
+                    'id' => 'ev-2',
+                    'attributes' => [
+                        'resource_id' => 1,
+                        'customer_id' => 3,
+                        'desc' => '14U',
+                        'start' => Carbon::parse('2026-02-06 13:00:00', 'America/Los_Angeles')->toIso8601String(),
+                        'end' => Carbon::parse('2026-02-06 14:00:00', 'America/Los_Angeles')->toIso8601String(),
+                    ],
+                ],
+            ],
+            'customers' => [
+                [
+                    'id' => 3,
+                    'name' => 'SAYHA',
+                ],
+            ],
+        ];
+
+        User::factory()->create([
+            'api_last_payload' => json_encode(['body' => $body]),
+            'api_last_fetched_at' => now(),
+        ]);
+
+        $response = $this->get('/events');
+
+        $response->assertStatus(200);
+        $response->assertSee('SAYHA_LOGO', false);
+    }
+
+    public function test_customer_id_4_maps_to_spokane_braves()
+    {
+        config(['app.timezone' => 'America/Los_Angeles']);
+        Carbon::setTestNow(Carbon::parse('2026-02-06 12:00:00', 'America/Los_Angeles'));
+
+        $body = [
+            'data' => [
+                [
+                    'id' => 'ev-braves',
+                    'attributes' => [
+                        'resource_id' => 1,
+                        'customer_id' => 4,
+                        'desc' => '12U',
+                        'start' => Carbon::parse('2026-02-06 13:00:00', 'America/Los_Angeles')->toIso8601String(),
+                        'end' => Carbon::parse('2026-02-06 14:00:00', 'America/Los_Angeles')->toIso8601String(),
+                    ],
+                ],
+            ],
+        ];
+
+        User::factory()->create([
+            'api_last_payload' => json_encode(['body' => $body]),
+            'api_last_fetched_at' => now(),
+        ]);
+
+        $response = $this->get('/events');
+
+        $response->assertStatus(200);
+        $response->assertSee('BRAVES_LOGO', false);
+    }
+
+    public function test_unresolved_customer_id_is_logged()
+    {
+        Log::shouldReceive('warning')->once()->withArgs(function ($msg, $ctx) {
+            return str_contains($msg, 'Unresolved customer_id')
+                && isset($ctx['customer_id'])
+                && $ctx['customer_id'] === 99;
+        });
+
+        config(['app.timezone' => 'America/Los_Angeles']);
+        Carbon::setTestNow(Carbon::parse('2026-02-06 12:00:00', 'America/Los_Angeles'));
+
+        $body = [
+            'data' => [
+                [
+                    'id' => 'ev-unresolved',
+                    'attributes' => [
+                        'resource_id' => 1,
+                        'customer_id' => 99,
+                        'desc' => '12U',
+                        'start' => Carbon::parse('2026-02-06 13:00:00', 'America/Los_Angeles')->toIso8601String(),
+                        'end' => Carbon::parse('2026-02-06 14:00:00', 'America/Los_Angeles')->toIso8601String(),
+                    ],
+                ],
+            ],
+        ];
+
+        User::factory()->create([
+            'api_last_payload' => json_encode(['body' => $body]),
+            'api_last_fetched_at' => now(),
+        ]);
+
+        $response = $this->get('/events');
+        $response->assertStatus(200);
+    }
+
+    public function test_takedown_event_shows_no_logo_in_events_view()
+    {
+        config(['app.timezone' => 'America/Los_Angeles']);
+        // make the takedown event live now
+        Carbon::setTestNow(Carbon::parse('2026-02-06 13:05:00', 'America/Los_Angeles'));
+
+        $items = [
+            [
+                'id' => 'takedown-live',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'customer' => 'SAYHA',
+                    'desc' => 'Takedown',
+                    'start' => Carbon::parse('2026-02-06 13:00:00', 'America/Los_Angeles')->toIso8601String(),
+                    'end' => Carbon::parse('2026-02-06 13:15:00', 'America/Los_Angeles')->toIso8601String(),
+                ],
+            ],
+        ];
+
+        User::factory()->create([
+            'api_last_payload' => json_encode(['body' => $items]),
+            'api_last_fetched_at' => now(),
+        ]);
+
+        $response = $this->get('/events');
+
+        $response->assertStatus(200);
+        // Logo should NOT appear for resurfacing/takedown events
+        $response->assertDontSee('SAYHA_LOGO', false);
+    }
+
+    public function test_takedown_event_has_no_logo_in_timeline()
+    {
+        config(['app.timezone' => 'America/Los_Angeles']);
+        Carbon::setTestNow(Carbon::parse('2026-02-06 12:00:00', 'America/Los_Angeles'));
+
+        $body = [
+            'data' => [
+                [
+                    'id' => 'takedown-tl',
+                    'attributes' => [
+                        'resource_id' => 1,
+                        'customer' => 'SAYHA',
+                        'desc' => 'Takedown',
+                        'start' => Carbon::parse('2026-02-06 13:00:00', 'America/Los_Angeles')->toIso8601String(),
+                        'end' => Carbon::parse('2026-02-06 13:15:00', 'America/Los_Angeles')->toIso8601String(),
+                    ],
+                ],
+            ],
+        ];
+
+        User::factory()->create([
+            'api_last_payload' => json_encode(['body' => $body]),
+            'api_last_fetched_at' => now(),
+        ]);
+
+        $response = $this->get(route('events.timeline'));
+
+        $response->assertStatus(200);
+        $response->assertDontSee('SAYHA_LOGO', false);
     }
 }

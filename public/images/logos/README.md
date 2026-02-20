@@ -50,3 +50,18 @@ To add a new organization:
 - If a logo file is missing, the event will display without a logo (graceful fallback)
 - More specific keywords are matched first (e.g., "Spokane Braves" before "Braves")
 - Logo matching is case-insensitive
+
+Customer ID mapping (fallback)
+
+- The controller resolves numeric `customer_id` values from the payload when possible (via `included`, `customers`, or `organizations`).
+- If the payload does not provide a name, a configurable fallback map is used: `config/organization_logos.php`.
+
+Default known IDs (editable in `config/organization_logos.php`):
+
+- 3 → SAYHA
+- 4 → Spokane Braves
+- 6 → LCFSC
+- 7 → Old Timers
+- 8 → Eagles
+- 9 → Gonzaga
+- 17 → Spokane Chiefs

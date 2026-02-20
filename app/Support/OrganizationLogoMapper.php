@@ -10,33 +10,33 @@ class OrganizationLogoMapper
      */
     private static array $logoMap = [
         // Spokane JR Chiefs / SAYHA
-        'jr chiefs' => 'sayha_logo.png',
-        'jr. chiefs' => 'sayha_logo.png',
-        'sayha' => 'sayha_logo.png',
+        'jr chiefs' => 'SAYHA_LOGO.png',
+        'jr. chiefs' => 'SAYHA_LOGO.png',
+        'sayha' => 'SAYHA_LOGO.png',
 
         // Lilac City Figure Skating Club
-        'lcfsc' => 'lcfsc_logo.png',
-        'lilac city' => 'lcfsc_logo.png',
-        'figure skating' => 'lcfsc_logo.png',
+        'lcfsc' => 'LCFSC_LOGO.png',
+        'lilac city' => 'LCFSC_LOGO.png',
+        'figure skating' => 'LCFSC_LOGO.png',
 
         // Old Timers Hockey Association
-        'old timers' => 'old-timers_logo.png',
-        'the jets' => 'jets_logo.png',
-        'jets' => 'jets_logo.png',
-        'the grinders' => 'grinders_logo.png',
-        'grinders' => 'grinders_logo.png',
+        'old timers' => 'OLD_TIMERS_LOGO.png',
+        'the jets' => 'JETS_LOGO.png',
+        'jets' => 'JETS_LOGO.png',
+        'the grinders' => 'GRINDERS_LOGO.png',
+        'grinders' => 'GRINDERS_LOGO.png',
 
         // Spokane Braves
-        'spokane braves' => 'braves_logo.png',
-        'braves' => 'braves_logo.png',
+        'spokane braves' => 'BRAVES_LOGO.png',
+        'braves' => 'BRAVES_LOGO.png',
 
         // Gonzaga University
-        'gonzaga university' => 'gonzaga_logo.png',
-        'gonzaga' => 'gonzaga_logo.png',
+        'gonzaga university' => 'GONZAGA_LOGO.png',
+        'gonzaga' => 'GONZAGA_LOGO.png',
 
         // Eagles Ice Arena
-        'eagles' => 'eagles_logo.png',
-        'eagles ice arena' => 'eagles_logo.png',
+        'eagles' => 'EAGLES_LOGO.png',
+        'eagles ice arena' => 'EAGLES_LOGO.png',
     ];
 
     /**

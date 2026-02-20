@@ -9,6 +9,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 class PublicEventsController extends Controller
 {
@@ -60,7 +61,9 @@ class PublicEventsController extends Controller
                 'end' => $end,
                 'status' => $status,
                 'is_close_rink' => false,
-                'logo' => OrganizationLogoMapper::getLogoPath($customer, $title),
+                'logo' => (str_contains(strtolower($title), 'takedown') || str_contains(strtolower($title), 'resurface'))
+                    ? null
+                    : OrganizationLogoMapper::getLogoPath($customer, $title),
                 'organization' => OrganizationLogoMapper::getOrganizationName($customer, $title),
             ];
         })->filter()->filter(function ($event) use ($windowStart, $windowEnd, $now) {
@@ -219,7 +222,9 @@ class PublicEventsController extends Controller
                 'end' => $end,
                 'status' => $status,
                 'is_close_rink' => false,
-                'logo' => OrganizationLogoMapper::getLogoPath($customer, $title),
+                'logo' => (str_contains(strtolower($title), 'takedown') || str_contains(strtolower($title), 'resurface'))
+                    ? null
+                    : OrganizationLogoMapper::getLogoPath($customer, $title),
                 'organization' => OrganizationLogoMapper::getOrganizationName($customer, $title),
             ];
         })->filter()->filter(function ($event) use ($dayStart, $dayEnd, $timezone) {
@@ -717,7 +722,108 @@ class PublicEventsController extends Controller
             return [];
         }
 
-        return $this->extractItemsFromBody($body);
+        $items = $this->extractItemsFromBody($body);
+
+        // Resolve numeric customer IDs to names when the payload provides
+        // a separate customers/included section. This fixes cases where the
+        // event has `customer_id` but no textual `customer`/`customer_name`.
+        $customerMap = [];
+
+        // Typical JSON:API `included` entries
+        if (!empty($body['included']) && is_array($body['included'])) {
+            foreach ($body['included'] as $inc) {
+                $incId = $inc['id'] ?? null;
+                $type = strtolower($inc['type'] ?? '');
+                $attrs = $inc['attributes'] ?? [];
+                if (!$incId || !is_array($attrs)) {
+                    continue;
+                }
+
+                if (str_contains($type, 'customer') || str_contains($type, 'organization') || str_contains($type, 'club')) {
+                    $name = $attrs['name'] ?? $attrs['title'] ?? $attrs['customer'] ?? null;
+                    if ($name) {
+                        $customerMap[(string) $incId] = $name;
+                    }
+                }
+            }
+        }
+
+        // Non-JSON:API payloads may include a `customers` or `organizations` array
+        foreach (['customers', 'organizations', 'clubs'] as $key) {
+            if (!empty($body[$key]) && is_array($body[$key])) {
+                foreach ($body[$key] as $c) {
+                    $id = $c['id'] ?? $c['customer_id'] ?? null;
+                    $name = $c['name'] ?? $c['title'] ?? $c['customer'] ?? null;
+                    if ($id && $name) {
+                        $customerMap[(string) $id] = $name;
+                    }
+                }
+            }
+        }
+
+        if (!empty($customerMap)) {
+            foreach ($items as &$item) {
+                $attrs = &$item['attributes'] ?? $item;
+                if (is_array($attrs)) {
+                    if ((empty($attrs['customer']) && empty($attrs['customer_name'])) && !empty($attrs['customer_id'])) {
+                        $cid = (string) $attrs['customer_id'];
+                        if (isset($customerMap[$cid])) {
+                            $attrs['customer_name'] = $customerMap[$cid];
+                        }
+                    }
+
+                    // also accomodate nested relationship object pointing to a customer id
+                    if ((empty($attrs['customer']) && empty($attrs['customer_name'])) && !empty($attrs['relationships']['customer']['data']['id'])) {
+                        $cid = (string) $attrs['relationships']['customer']['data']['id'];
+                        if (isset($customerMap[$cid])) {
+                            $attrs['customer_name'] = $customerMap[$cid];
+                        }
+                    }
+                }
+            }
+            unset($item);
+        }
+
+        // Fallback static mapping for known numeric customer IDs (from public/images/logos/README.md)
+        $staticCustomerIdMap = [
+            '3' => 'SAYHA',
+            '4' => 'Spokane Braves',
+            '6' => 'LCFSC',
+            '7' => 'Old Timers',
+            '8' => 'Eagles Ice Arena',
+            '9' => 'Gonzaga University',
+            '17' => 'Spokane Chiefs',
+        ];
+
+        // Apply static mapping where payload didn't provide a textual customer name
+        foreach ($items as &$item) {
+            $attrs = &$item['attributes'] ?? $item;
+            if (is_array($attrs) && empty($attrs['customer']) && empty($attrs['customer_name']) && !empty($attrs['customer_id'])) {
+                $cid = (string) $attrs['customer_id'];
+                if (empty($attrs['customer_name'])) {
+                    if (isset($customerMap[$cid])) {
+                        $attrs['customer_name'] = $customerMap[$cid];
+                    } elseif (isset($staticCustomerIdMap[$cid])) {
+                        $attrs['customer_name'] = $staticCustomerIdMap[$cid];
+                    }
+                }
+            }
+        }
+        unset($item);
+
+        // Log unresolved customer_id entries so we can capture real payloads
+        foreach ($items as $item) {
+            $attrs = $item['attributes'] ?? $item;
+            if (is_array($attrs) && !empty($attrs['customer_id']) && empty($attrs['customer']) && empty($attrs['customer_name'])) {
+                Log::warning('Unresolved customer_id in events payload', [
+                    'id' => $item['id'] ?? null,
+                    'customer_id' => $attrs['customer_id'],
+                    'title' => $attrs['desc'] ?? $attrs['title'] ?? null,
+                ]);
+            }
+        }
+
+        return $items;
     }
 
     private function buildMockItems(Carbon $now): array
