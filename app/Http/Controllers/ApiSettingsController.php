@@ -81,8 +81,9 @@ class ApiSettingsController extends Controller
         }
 
         $baseUrl = rtrim($user->api_base_url, '/');
-        $start = now()->startOfDay()->format('Y-m-d\TH:i:s');
-        $end = now()->endOfDay()->format('Y-m-d\TH:i:s');
+        // span yesterday through tomorrow so that a single fetch covers full current day
+        $start = now()->subDay()->startOfDay()->format('Y-m-d\TH:i:s');
+        $end   = now()->addDay()->endOfDay()->format('Y-m-d\TH:i:s');
         $query = 'filter[start__gt]=' . $start . '&filter[end__lt]=' . $end;
         $url = $baseUrl;
 
@@ -90,7 +91,8 @@ class ApiSettingsController extends Controller
             $url .= '/' . ltrim($user->api_test_endpoint, '/');
         }
 
-        $url .= '?' . $query;
+        $separator = str_contains($url, '?') ? '&' : '?';
+        $url .= $separator . $query;
 
         $client = Http::timeout(15)->accept('application/vnd.api+json');
 

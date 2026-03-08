@@ -93,8 +93,9 @@ class FetchApiEvents extends Command
             }
 
             $baseUrl = rtrim($user->api_base_url, '/');
-            $start = now()->startOfDay()->format('Y-m-d\TH:i:s');
-            $end = now()->endOfDay()->format('Y-m-d\TH:i:s');
+            // include a buffer window covering yesterday through tomorrow
+            $start = now()->subDay()->startOfDay()->format('Y-m-d\TH:i:s');
+            $end   = now()->addDay()->endOfDay()->format('Y-m-d\TH:i:s');
             $query = 'filter[start__gt]=' . $start . '&filter[end__lt]=' . $end;
             $url = $baseUrl;
 
@@ -102,7 +103,12 @@ class FetchApiEvents extends Command
                 $url .= '/' . ltrim($user->api_test_endpoint, '/');
             }
 
-            $url .= '?' . $query;
+            // if the URL already contains a query (user supplied one via the
+            // test endpoint) we should join with & rather than adding a second
+            // question mark, otherwise the later portion will be treated as part
+            // of the path and not parsed as query parameters.
+            $separator = str_contains($url, '?') ? '&' : '?';
+            $url .= $separator . $query;
 
             $client = Http::timeout(15)->accept('application/vnd.api+json');
             if ($token) {

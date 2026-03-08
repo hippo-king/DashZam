@@ -30,7 +30,10 @@ class PublicFetchController extends Controller
 
             return back()->with('status', 'API fetch requested.');
         } finally {
-            try { $lock->release(); } catch (\Throwable $e) { /* ignore */ }
+            try {
+                $lock->release();
+            } catch (\Throwable $e) { /* ignore */
+            }
         }
     }
 }
