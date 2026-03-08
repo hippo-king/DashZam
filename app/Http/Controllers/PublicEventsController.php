@@ -71,11 +71,24 @@ class PublicEventsController extends Controller
             return $event['end']->greaterThanOrEqualTo($windowStart)
                 && $event['start']->lessThanOrEqualTo($windowEnd)
                 && $event['end']->greaterThanOrEqualTo($now);
-        })->sortBy(function ($event) use ($now) {
-            $isLive = $now->betweenIncluded($event['start'], $event['end']);
+        })
+            // de-duplicate events with identical time spans and essentially the
+            // same base title.  Parenthetical qualifiers (e.g. “(Adult)” vs
+            // “(Children)”) are stripped when computing the key so that Public
+            // Skate splatters collapse and duplicate takedown records don’t show
+            // up twice.
+            ->unique(function ($event) {
+                $baseTitle = preg_replace('/\s*\([^)]*\)/', '', $event['title']);
+                $baseTitle = trim(preg_replace('/\s{2,}/', ' ', $baseTitle));
+                return $event['start']->getTimestamp()
+                    . '|' . $event['end']->getTimestamp()
+                    . '|' . strtolower($baseTitle);
+            })
+            ->sortBy(function ($event) use ($now) {
+                $isLive = $now->betweenIncluded($event['start'], $event['end']);
 
-            return sprintf('%d-%012d', $isLive ? 0 : 1, $event['start']->getTimestamp());
-        })->values();
+                return sprintf('%d-%012d', $isLive ? 0 : 1, $event['start']->getTimestamp());
+            })->values();
 
         $rinks = [
             'Rink 1' => [],
@@ -232,7 +245,19 @@ class PublicEventsController extends Controller
             $end = $event['end']->copy()->timezone($timezone);
 
             return $end->greaterThanOrEqualTo($dayStart) && $start->lessThanOrEqualTo($dayEnd);
-        })->sortBy('start')->values();
+        })
+            // same deduplication logic as the index view; strip parenthetical
+            // qualifiers from the title so simultaneous Public Skate entries
+            // collapse together and duplicated resurfacing/takedown events
+            // don't appear twice.
+            ->unique(function ($event) {
+                $baseTitle = preg_replace('/\s*\([^)]*\)/', '', $event['title']);
+                $baseTitle = trim(preg_replace('/\s{2,}/', ' ', $baseTitle));
+                return $event['start']->getTimestamp()
+                    . '|' . $event['end']->getTimestamp()
+                    . '|' . strtolower($baseTitle);
+            })
+            ->sortBy('start')->values();
 
         $rinks = [
             'Rink 1' => [],

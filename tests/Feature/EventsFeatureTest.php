@@ -289,6 +289,9 @@ class EventsFeatureTest extends TestCase
         $response->assertStatus(200);
         // Logo should NOT appear for resurfacing/takedown events
         $response->assertDontSee('SAYHA_LOGO', false);
+        // zamboni indicator should be present and positioned along progress (~33%)
+        $response->assertSee('zamboni', false);
+        $response->assertSee('left: 33%', false);
     }
 
     public function test_takedown_event_has_no_logo_in_timeline()
@@ -320,5 +323,95 @@ class EventsFeatureTest extends TestCase
 
         $response->assertStatus(200);
         $response->assertDontSee('SAYHA_LOGO', false);
+    }
+
+    public function test_duplicate_public_skate_collapses_to_single_entry()
+    {
+        config(['app.timezone' => 'America/Los_Angeles']);
+        Carbon::setTestNow(Carbon::parse('2026-03-10 10:00:00', 'America/Los_Angeles'));
+
+        $start = Carbon::parse('2026-03-10 11:00:00', 'America/Los_Angeles')->toIso8601String();
+        $end = Carbon::parse('2026-03-10 12:00:00', 'America/Los_Angeles')->toIso8601String();
+
+        $items = [
+            [
+                'id' => 'ps-adult',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'desc' => 'Public Skate (Adult)',
+                    'start' => $start,
+                    'end' => $end,
+                ],
+            ],
+            [
+                'id' => 'ps-child',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'desc' => 'Public Skate (Children)',
+                    'start' => $start,
+                    'end' => $end,
+                ],
+            ],
+        ];
+
+        User::factory()->create([
+            'api_last_payload' => json_encode(['body' => $items]),
+            'api_last_fetched_at' => now(),
+        ]);
+
+        $response = $this->get('/events');
+        $response->assertStatus(200);
+        // should only see one of the two parenthetical variants
+        $response->assertSee('Public Skate (Adult)');
+        $response->assertDontSee('Public Skate (Children)');
+
+        $response = $this->get(route('events.timeline'));
+        $response->assertStatus(200);
+        $response->assertSee('Public Skate (Adult)');
+        $response->assertDontSee('Public Skate (Children)');
+    }
+
+    public function test_duplicate_takedown_events_are_removed()
+    {
+        config(['app.timezone' => 'America/Los_Angeles']);
+        Carbon::setTestNow(Carbon::parse('2026-03-10 10:00:00', 'America/Los_Angeles'));
+
+        $start = Carbon::parse('2026-03-10 14:00:00', 'America/Los_Angeles')->toIso8601String();
+        $end = Carbon::parse('2026-03-10 14:15:00', 'America/Los_Angeles')->toIso8601String();
+
+        $items = [
+            [
+                'id' => 't1',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'desc' => 'Takedown',
+                    'start' => $start,
+                    'end' => $end,
+                ],
+            ],
+            [
+                'id' => 't2',
+                'attributes' => [
+                    'resource_id' => 1,
+                    'desc' => 'Takedown',
+                    'start' => $start,
+                    'end' => $end,
+                ],
+            ],
+        ];
+
+        User::factory()->create([
+            'api_last_payload' => json_encode(['body' => $items]),
+            'api_last_fetched_at' => now(),
+        ]);
+
+        $response = $this->get('/events');
+        $response->assertStatus(200);
+        // only a single Takedown should appear
+        $this->assertEquals(1, substr_count($response->getContent(), 'Takedown'));
+
+        $response = $this->get(route('events.timeline'));
+        $response->assertStatus(200);
+        $this->assertEquals(1, substr_count($response->getContent(), 'Takedown'));
     }
 }
